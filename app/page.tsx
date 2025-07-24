@@ -1,16 +1,51 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef, useCallback } from "react"
+import React from "react"
+import { useState, useEffect, useRef, useCallback, lazy } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Shield, AlertTriangle, Eye, Lock, ChevronLeft, ChevronRight, Wifi, ExternalLink } from "lucide-react"
+import {
+  Shield,
+  AlertTriangle,
+  Eye,
+  Lock,
+  ChevronLeft,
+  ChevronRight,
+  Wifi,
+  Clock,
+  MessageCircle,
+  CheckCircle,
+  Star,
+  Bell,
+  CreditCard,
+  Gift,
+  BookOpen,
+  Infinity,
+  Mail,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { CountryPhoneInput } from "@/components/country-phone-input"
+import { LoadingSpinner } from "@/components/loading-spinner"
+import { Checkbox } from "@/components/ui/checkbox"
 
-type Step = "welcome" | "headlines" | "form" | "scanning" | "realcases" | "conversion" | "news" | "final"
+// Lazy load components for better performance
+const LazyImage = lazy(() => import("next/image"))
+
+type Step =
+  | "welcome"
+  | "headlines"
+  | "form"
+  | "scanning"
+  | "chat-simulation"
+  | "conversion"
+  | "final"
+  | "checkout"
+  | "upsell1"
+  | "upsell2"
+  | "upsell3"
+  | "thank-you"
 
 interface WhatsAppProfileResponse {
   success: boolean
@@ -20,18 +55,49 @@ interface WhatsAppProfileResponse {
   error?: string
 }
 
+interface Notification {
+  id: number
+  message: string
+  timestamp: Date
+}
+
+interface PurchaseData {
+  mainProduct: boolean
+  orderBump: boolean
+  upsell1: boolean
+  upsell2: boolean
+  upsell3: boolean
+  totalAmount: number
+}
+
 export default function SafeKidAIFunil() {
   const [currentStep, setCurrentStep] = useState<Step>("welcome")
   const [childName, setChildName] = useState("")
   const [whatsappNumber, setWhatsappNumber] = useState("")
+  const [isPhoneValid, setIsPhoneValid] = useState(false)
   const [profileImage, setProfileImage] = useState("")
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [isProfilePrivate, setIsProfilePrivate] = useState(false)
   const [apiError, setApiError] = useState("")
   const [scanProgress, setScanProgress] = useState(0)
-  const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
-  const [currentRealCaseIndex, setCurrentRealCaseIndex] = useState(0)
-  const [profileLoaded, setProfileLoaded] = useState(false)
+  const [currentProofIndex, setCurrentProofIndex] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(5 * 60) // 5 minutos em segundos
+  const [ctaVariant, setCTAVariant] = useState(0) // Para teste A/B
+  const [showExitPopup, setShowExitPopup] = useState(false)
+  const [chatMessageIndex, setChatMessageIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [protectedFamilies, setProtectedFamilies] = useState(342)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [showBumpOffer, setShowBumpOffer] = useState(false)
+  const [orderBumpSelected, setOrderBumpSelected] = useState(false)
+  const [purchaseData, setPurchaseData] = useState<PurchaseData>({
+    mainProduct: true,
+    orderBump: false,
+    upsell1: false,
+    upsell2: false,
+    upsell3: false,
+    totalAmount: 27,
+  })
   const [scanResults, setScanResults] = useState({
     telegram: { status: "safe", message: "Sem riscos detectados" },
     instagram: { status: "warning", message: "Tentativa de aliciamento detectada" },
@@ -41,11 +107,7 @@ export default function SafeKidAIFunil() {
   })
 
   const nameInputRef = useRef<HTMLInputElement>(null)
-  const whatsappInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
-
-  const [currentHeadlineImageIndex, setCurrentHeadlineImageIndex] = useState(0)
-  const [currentHeadlineTextIndex, setCurrentHeadlineTextIndex] = useState(0)
 
   const socialNetworks = [
     { name: "Instagram", icon: "/social-icons/instagram.png", color: "from-purple-500 to-pink-500" },
@@ -55,54 +117,7 @@ export default function SafeKidAIFunil() {
     { name: "Snapchat", icon: "/social-icons/snapchat.png", color: "from-yellow-400 to-yellow-500" },
   ]
 
-  // Casos reais para o carrossel
-  const realCases = [
-    {
-      id: 1,
-      outlet: "The Guardian",
-      logo: "🏛️", // Placeholder - pode ser substituído por logo real
-      headline: "Children are speaking to strangers online – and grooming is on the rise",
-      subheadline: "UK experts warn: social media is fueling a silent epidemic.",
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-900",
-    },
-    {
-      id: 2,
-      outlet: "BBC News",
-      logo: "📺", // Placeholder - pode ser substituído por logo real
-      headline: "UK Girl lured into private Telegram group by online predator",
-      subheadline: "Police investigating suspected grooming case in Manchester.",
-      bgColor: "bg-red-50",
-      textColor: "text-red-900",
-    },
-    {
-      id: 3,
-      outlet: "CNN",
-      logo: "📰", // Placeholder - pode ser substituído por logo real
-      headline: "Teen Targeted on TikTok by predator posing as friend",
-      subheadline: "Case reported in the U.S. involving a 13-year-old girl.",
-      bgColor: "bg-orange-50",
-      textColor: "text-orange-900",
-    },
-    {
-      id: 4,
-      outlet: "NSPCC",
-      logo: "🛡️", // Placeholder - pode ser substituído por logo real
-      headline: "82% rise in online grooming crimes against children in the last 5 years",
-      subheadline: "Instagram and Snapchat lead in reports of abuse.",
-      bgColor: "bg-purple-50",
-      textColor: "text-purple-900",
-    },
-    {
-      id: 5,
-      outlet: "ICE / Homeland Security",
-      logo: "🏛️", // Placeholder - pode ser substituído por logo real
-      headline: "Global online child abuse operation rescues over 450 minors",
-      subheadline: "Authorities say dark web is being used to target young children.",
-      bgColor: "bg-gray-50",
-      textColor: "text-gray-900",
-    },
-  ]
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0)
 
   const newsCards = [
     {
@@ -135,68 +150,246 @@ export default function SafeKidAIFunil() {
     },
   ]
 
-  // Headlines para a nova seção
-  const headlineImages = [
+  // Prova social dinâmica
+  const socialProofs = [
+    "👩‍🦰 Mãe de Lucas desbloqueou o relatório há 2 minutos",
+    "🧑 João (RJ) ativou proteção agora mesmo",
+    "👩 Ana (SP) descobriu atividade suspeita há 1 minuto",
+    "🧔 Carlos (MG) protegeu sua filha há 3 minutos",
+    "👩‍🦱 Maria (PR) desbloqueou análise completa agora",
+  ]
+
+  // Notificações em tempo real
+  const realTimeNotifications = [
+    "👩‍🦰 Mãe de Lucas acabou de desbloquear",
+    "👀 Nova verificação concluída há 1 min",
+    "🧑 João (RJ) ativou proteção agora mesmo",
+    "👩 Ana descobriu atividade suspeita",
+    "🔍 Relatório gerado há 30 segundos",
+  ]
+
+  // Simulação de conversa suspeita
+  const suspiciousChat = [
+    { sender: "stranger", message: "Você parece mais madura que sua idade...", time: "19:03" },
+    { sender: "child", message: "Sério? Rs", time: "19:04" },
+    { sender: "stranger", message: "Vamos manter isso entre nós, ok?", time: "19:05" },
+    { sender: "stranger", message: "Você tem WhatsApp? Podemos conversar melhor lá", time: "19:06" },
+    { sender: "child", message: "Não sei...", time: "19:07" },
+    { sender: "stranger", message: "Confie em mim, sou diferente dos outros", time: "19:08" },
+  ]
+
+  // Depoimentos reais
+  const realTestimonials = [
     {
-      id: 1,
-      image: "/news/cnn-tiktok.jpeg",
-      title: "Teen Targeted on TikTok by predator posing as friend",
-      source: "CNN",
+      name: "Carlos M.",
+      child: "pai da Isadora",
+      text: "Nunca pensei que minha filha pudesse estar conversando com um estranho assim. O SafeKid AI me mostrou coisas que eu jamais imaginava.",
+      avatar: "/testimonials/carlos-testimonial.jpg",
+      verified: true,
     },
     {
-      id: 2,
-      image: "/news/bbc-telegram-1.jpeg",
-      title: "UK Girl Lured into private Telegram Group by online predator",
-      source: "BBC News",
-    },
-    {
-      id: 3,
-      image: "/news/guardian-snapchat.jpeg",
-      title: "Teen tricked into sending private photos on Snapchat",
-      source: "The Guardian",
-    },
-    {
-      id: 4,
-      image: "/news/bbc-telegram-2.jpeg",
-      title: "UK Girl Lured into Private Telegram by Online Predator",
-      source: "BBC News",
+      name: "Mariana R.",
+      child: "mãe da Laura",
+      text: "Eu achava que minha filha estava segura. Quando vi o que estavam mandando pra ela no Snapchat, entrei em choque. Ainda bem que descobri a tempo.",
+      avatar: "/testimonials/mariana-testimonial.jpg",
+      verified: true,
     },
   ]
 
-  const headlineTexts = [
+  // Comentários estilo rede social
+  const socialComments = [
     {
-      id: 1,
-      headline: "Children are speaking to strangers online – and grooming is on the rise",
-      source: "The Guardian",
-      date: "November 15, 2023",
-      icon: "🏛️",
+      name: "Rodrigo M.",
+      time: "há 2 horas",
+      comment:
+        "Usei ontem e fiquei em choque. O que vi no TikTok da minha filha me fez chorar. Obrigado por essa ferramenta.",
+      avatar: "/testimonials/rodrigo-comment.jpg",
     },
     {
-      id: 2,
-      headline: "82% rise in online grooming crimes against children in the last 5 years",
-      source: "NSPCC",
-      date: "October 8, 2023",
-      icon: "🛡️",
-    },
-    {
-      id: 3,
-      headline: "Global online child abuse operation rescues over 450 minors",
-      source: "ICE / Homeland Security",
-      date: "September 22, 2023",
-      icon: "🏛️",
-    },
-    {
-      id: 4,
-      headline: "Social media platforms failing to protect children from predators",
-      source: "BBC News",
-      date: "August 30, 2023",
-      icon: "📺",
+      name: "Patricia S.",
+      time: "há 4 horas",
+      comment: "Meu filho estava sendo manipulado no Discord e eu não sabia. Essa análise salvou nossa família.",
+      avatar: "/testimonials/patricia-comment.jpg",
     },
   ]
+
+  // Variações de CTA para teste A/B
+  const ctaVariants = [
+    { text: "🔓 Desbloquear Relatório Completo", icon: Lock },
+    { text: "🔒 Proteger Meu Filho Agora", icon: Shield },
+    { text: "🔍 Ver Relatório Urgente", icon: Eye },
+    { text: "⚡ Desbloquear em Tempo Real", icon: AlertTriangle },
+  ]
+
+  // FAQ Data
+  const faqData = [
+    {
+      question: "Isso funciona com qualquer rede social?",
+      answer:
+        "Sim! Nossa tecnologia analisa Instagram, TikTok, WhatsApp, Telegram, Snapchat, Discord e mais de 15 plataformas digitais onde seu filho pode estar interagindo.",
+    },
+    {
+      question: "É seguro para meus dados?",
+      answer:
+        "Absolutamente. Utilizamos criptografia de nível bancário e seguimos rigorosamente a LGPD. Seus dados são processados de forma segura e nunca compartilhados com terceiros.",
+    },
+    {
+      question: "É uma assinatura?",
+      answer:
+        "Não! É um pagamento único de $27 que inclui o relatório completo + 30 dias de monitoramento gratuito. Sem renovação automática ou taxas ocultas.",
+    },
+    {
+      question: "O que acontece após o pagamento?",
+      answer:
+        "Você recebe acesso imediato ao relatório completo por e-mail e WhatsApp. O monitoramento contínuo começa automaticamente e você recebe alertas em tempo real.",
+    },
+  ]
+
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
+  // Preload critical images
+  useEffect(() => {
+    const preloadImages = [
+      "/safekid-logo-shield.png",
+      "/background/tech-kids.jpeg",
+      "/testimonials/carlos-testimonial.jpg",
+      "/testimonials/mariana-testimonial.jpg",
+    ]
+
+    preloadImages.forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  }, [])
+
+  // Session cache for form data
+  useEffect(() => {
+    const savedData = sessionStorage.getItem("safekid-form-data")
+    if (savedData) {
+      const { name, phone } = JSON.parse(savedData)
+      if (name) setChildName(name)
+      if (phone) setWhatsappNumber(phone)
+    }
+  }, [])
+
+  // Save form data to session
+  useEffect(() => {
+    if (childName || whatsappNumber) {
+      sessionStorage.setItem(
+        "safekid-form-data",
+        JSON.stringify({
+          name: childName,
+          phone: whatsappNumber,
+        }),
+      )
+    }
+  }, [childName, whatsappNumber])
+
+  // Detectar tentativa de saída
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (currentStep === "conversion" || currentStep === "final" || currentStep === "checkout") {
+        setShowExitPopup(true)
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 && (currentStep === "conversion" || currentStep === "final" || currentStep === "checkout")) {
+        setShowExitPopup(true)
+      }
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    document.addEventListener("mouseleave", handleMouseLeave)
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      document.removeEventListener("mouseleave", handleMouseLeave)
+    }
+  }, [currentStep])
+
+  // Timer countdown
+  useEffect(() => {
+    if (currentStep === "conversion" || currentStep === "final" || currentStep === "checkout") {
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [currentStep])
+
+  // Contador de famílias protegidas
+  useEffect(() => {
+    if (currentStep === "final" || currentStep === "checkout") {
+      const interval = setInterval(() => {
+        setProtectedFamilies((prev) => prev + Math.floor(Math.random() * 3))
+      }, 8000)
+      return () => clearInterval(interval)
+    }
+  }, [currentStep])
+
+  // Notificações em tempo real
+  useEffect(() => {
+    if (currentStep === "final" || currentStep === "checkout") {
+      const interval = setInterval(() => {
+        const newNotification: Notification = {
+          id: Date.now(),
+          message: realTimeNotifications[Math.floor(Math.random() * realTimeNotifications.length)],
+          timestamp: new Date(),
+        }
+
+        setNotifications((prev) => {
+          const updated = [newNotification, ...prev].slice(0, 3)
+          return updated
+        })
+
+        // Remove notification after 4 seconds
+        setTimeout(() => {
+          setNotifications((prev) => prev.filter((n) => n.id !== newNotification.id))
+        }, 4000)
+      }, 6000)
+
+      return () => clearInterval(interval)
+    }
+  }, [currentStep])
+
+  // Rotação da prova social
+  useEffect(() => {
+    if (currentStep === "scanning") {
+      const interval = setInterval(() => {
+        setCurrentProofIndex((prev) => (prev + 1) % socialProofs.length)
+      }, 3000)
+      return () => clearInterval(interval)
+    }
+  }, [currentStep, socialProofs.length])
+
+  // Animação da conversa suspeita
+  useEffect(() => {
+    if (currentStep === "chat-simulation") {
+      const interval = setInterval(() => {
+        setChatMessageIndex((prev) => {
+          if (prev >= suspiciousChat.length - 1) {
+            clearInterval(interval)
+            return prev
+          }
+          return prev + 1
+        })
+      }, 2500)
+      return () => clearInterval(interval)
+    }
+  }, [currentStep])
 
   // Função para buscar foto do WhatsApp
   const fetchWhatsAppProfile = useCallback(async (phone: string) => {
-    if (!phone || phone.length < 10) return
+    if (!phone || phone.length < 8) return
 
     setIsLoadingProfile(true)
     setApiError("")
@@ -238,31 +431,13 @@ export default function SafeKidAIFunil() {
     }
   }, [])
 
-  // Formatação do número de WhatsApp
-  const formatWhatsAppNumber = (value: string) => {
-    const numbers = value.replace(/\D/g, "")
-    if (numbers.length <= 11) {
-      let formatted = numbers
-      if (numbers.length >= 11) {
-        formatted = numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
-      } else if (numbers.length >= 10) {
-        formatted = numbers.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
-      } else if (numbers.length >= 6) {
-        formatted = numbers.replace(/(\d{2})(\d{4})(\d*)/, "($1) $2-$3")
-      } else if (numbers.length >= 2) {
-        formatted = numbers.replace(/(\d{2})(\d*)/, "($1) $2")
-      }
-      return formatted
-    }
-    return value
-  }
-
-  const handleWhatsAppChange = (value: string) => {
-    const formatted = formatWhatsAppNumber(value)
-    setWhatsappNumber(formatted)
+  // Handle phone number change
+  const handlePhoneChange = (value: string, country: any, isValid: boolean) => {
+    setWhatsappNumber(value)
+    setIsPhoneValid(isValid)
 
     const cleanPhone = value.replace(/\D/g, "")
-    if (cleanPhone.length >= 10) {
+    if (isValid && cleanPhone.length >= 8) {
       fetchWhatsAppProfile(cleanPhone)
     } else {
       setProfileImage("")
@@ -274,18 +449,29 @@ export default function SafeKidAIFunil() {
 
   // Função para verificar se pode avançar
   const canProceed = () => {
-    const name = nameInputRef.current?.value.trim() || ""
-    const whatsapp = whatsappInputRef.current?.value.trim() || ""
-    return name && whatsapp && profileLoaded && !isLoadingProfile
+    const name = nameInputRef.current?.value.trim() || childName.trim()
+    const hasValidName = name && name.length >= 2
+    const hasValidPhone = isPhoneValid && whatsappNumber.trim().length > 0
+    const isProfileReady = profileLoaded && !isLoadingProfile
+
+    return hasValidName && hasValidPhone && isProfileReady
   }
 
   // Função para iniciar análise
-  const handleStartAnalysis = () => {
-    if (canProceed()) {
-      const name = nameInputRef.current?.value.trim() || ""
-      setChildName(name)
-      setCurrentStep("scanning")
-    }
+  const handleStartAnalysis = async () => {
+    if (!canProceed()) return
+
+    setIsTransitioning(true)
+
+    const name = nameInputRef.current?.value.trim() || childName.trim()
+    setChildName(name)
+
+    // Simulate brief loading for better UX
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    setCurrentStep("scanning")
+    setCTAVariant(Math.floor(Math.random() * ctaVariants.length))
+    setIsTransitioning(false)
   }
 
   // Manipulador de tecla Enter
@@ -296,7 +482,58 @@ export default function SafeKidAIFunil() {
     }
   }
 
-  // Animação de escaneamento - ATUALIZADA para ir para realcases
+  // Handle step transitions with loading states
+  const handleStepTransition = async (nextStep: Step) => {
+    setIsTransitioning(true)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    setCurrentStep(nextStep)
+    setIsTransitioning(false)
+  }
+
+  // Handle order bump selection
+  const handleOrderBumpChange = (checked: boolean) => {
+    setOrderBumpSelected(checked)
+    setPurchaseData((prev) => ({
+      ...prev,
+      orderBump: checked,
+      totalAmount: checked ? 44 : 27, // $27 + $17
+    }))
+  }
+
+  // Handle main checkout
+  const handleMainCheckout = () => {
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentStep("upsell1")
+      setIsTransitioning(false)
+    }, 2000)
+  }
+
+  // Handle upsell purchases
+  const handleUpsellPurchase = (upsellNumber: 1 | 2 | 3, price: number) => {
+    setPurchaseData((prev) => ({
+      ...prev,
+      [`upsell${upsellNumber}`]: true,
+      totalAmount: prev.totalAmount + price,
+    }))
+
+    setIsTransitioning(true)
+    setTimeout(() => {
+      if (upsellNumber === 1) setCurrentStep("upsell2")
+      else if (upsellNumber === 2) setCurrentStep("upsell3")
+      else setCurrentStep("thank-you")
+      setIsTransitioning(false)
+    }, 1500)
+  }
+
+  // Handle upsell skip
+  const handleUpsellSkip = (upsellNumber: 1 | 2 | 3) => {
+    if (upsellNumber === 1) setCurrentStep("upsell2")
+    else if (upsellNumber === 2) setCurrentStep("upsell3")
+    else setCurrentStep("thank-you")
+  }
+
+  // Animação de escaneamento
   useEffect(() => {
     if (currentStep === "scanning") {
       setScanProgress(0)
@@ -304,8 +541,7 @@ export default function SafeKidAIFunil() {
         setScanProgress((prev) => {
           if (prev >= 100) {
             clearInterval(interval)
-            // Após scanning, vai para casos reais
-            setTimeout(() => setCurrentStep("realcases"), 1000)
+            setTimeout(() => handleStepTransition("chat-simulation"), 1000)
             return 100
           }
           return prev + 2
@@ -315,53 +551,15 @@ export default function SafeKidAIFunil() {
     }
   }, [currentStep])
 
-  // Auto-scroll do carrossel de casos reais
-  useEffect(() => {
-    if (currentStep === "realcases") {
-      const interval = setInterval(() => {
-        setCurrentRealCaseIndex((prev) => (prev + 1) % realCases.length)
-      }, 5000) // 5 segundos por caso
-      return () => clearInterval(interval)
-    }
-  }, [currentStep, realCases.length])
-
   // Auto-scroll do carrossel de notícias
   useEffect(() => {
-    if (currentStep === "news") {
+    if (currentStep === "headlines") {
       const interval = setInterval(() => {
         setCurrentNewsIndex((prev) => (prev + 1) % newsCards.length)
       }, 4000)
       return () => clearInterval(interval)
     }
   }, [currentStep, newsCards.length])
-
-  // Auto-scroll do carrossel de imagens de headlines
-  useEffect(() => {
-    if (currentStep === "headlines") {
-      const interval = setInterval(() => {
-        setCurrentHeadlineImageIndex((prev) => (prev + 1) % headlineImages.length)
-      }, 4000)
-      return () => clearInterval(interval)
-    }
-  }, [currentStep, headlineImages.length])
-
-  // Auto-scroll do carrossel de texto de headlines
-  useEffect(() => {
-    if (currentStep === "headlines") {
-      const interval = setInterval(() => {
-        setCurrentHeadlineTextIndex((prev) => (prev + 1) % headlineTexts.length)
-      }, 3500)
-      return () => clearInterval(interval)
-    }
-  }, [currentStep, headlineTexts.length])
-
-  const nextRealCase = () => {
-    setCurrentRealCaseIndex((prev) => (prev + 1) % realCases.length)
-  }
-
-  const prevRealCase = () => {
-    setCurrentRealCaseIndex((prev) => (prev - 1 + realCases.length) % realCases.length)
-  }
 
   const nextNews = () => {
     setCurrentNewsIndex((prev) => (prev + 1) % newsCards.length)
@@ -371,24 +569,97 @@ export default function SafeKidAIFunil() {
     setCurrentNewsIndex((prev) => (prev - 1 + newsCards.length) % newsCards.length)
   }
 
-  const nextHeadlineImage = () => {
-    setCurrentHeadlineImageIndex((prev) => (prev + 1) % headlineImages.length)
+  // Formatação do timer
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const prevHeadlineImage = () => {
-    setCurrentHeadlineImageIndex((prev) => (prev - 1 + headlineImages.length) % headlineImages.length)
+  // Estatística local
+  const getLocalStatistic = () => {
+    return "⚠️ Só este mês, 57 casos foram registrados em Pindamonhangaba."
   }
 
-  const nextHeadlineText = () => {
-    setCurrentHeadlineTextIndex((prev) => (prev + 1) % headlineTexts.length)
-  }
+  // Loading overlay component
+  const LoadingOverlay = () => (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-2xl p-6">
+        <LoadingSpinner message="Carregando verificação..." />
+      </div>
+    </div>
+  )
 
-  const prevHeadlineText = () => {
-    setCurrentHeadlineTextIndex((prev) => (prev - 1 + headlineTexts.length) % headlineTexts.length)
-  }
+  // Floating Notifications Component
+  const FloatingNotifications = () => (
+    <div className="fixed bottom-4 left-4 z-40 space-y-2">
+      <AnimatePresence>
+        {notifications.map((notification) => (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, x: -100, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -100, scale: 0.8 }}
+            className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg max-w-xs"
+          >
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-[#1FE3C2]" />
+              <span className="text-sm text-gray-700 font-medium">{notification.message}</span>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
 
   return (
     <div className="min-h-screen font-sans">
+      {/* Loading Overlay */}
+      {isTransitioning && <LoadingOverlay />}
+
+      {/* Floating Notifications */}
+      <FloatingNotifications />
+
+      {/* Pop-up de Urgência para Abandono */}
+      <AnimatePresence>
+        {showExitPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white rounded-2xl p-6 max-w-md w-full text-center"
+            >
+              <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">⚠️ {childName} ainda pode estar em perigo</h3>
+              <p className="text-gray-600 mb-6">Você quer mesmo sair sem visualizar o relatório completo?</p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setShowExitPopup(false)}
+                  className="flex-1 bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] text-white"
+                >
+                  PROTEGER AGORA
+                </Button>
+                <Button
+                  onClick={() => window.close()}
+                  variant="outline"
+                  className="flex-1 border-gray-300 text-gray-600"
+                >
+                  SAIR SEM VER
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {/* Tela de Boas-Vindas */}
         {currentStep === "welcome" && (
@@ -426,7 +697,12 @@ export default function SafeKidAIFunil() {
                 className="text-center mb-8"
               >
                 <div className="inline-flex items-center justify-center mb-4">
-                  <img src="/safekid-logo.png" alt="SafeKid AI" className="w-24 h-24 object-contain" />
+                  <img
+                    src="/safekid-logo-shield.png"
+                    alt="SafeKid AI"
+                    className="w-24 h-24 object-contain"
+                    loading="eager"
+                  />
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">SafeKid AI</h1>
                 <p className="text-[#1FE3C2] text-sm md:text-base font-medium">
@@ -470,6 +746,7 @@ export default function SafeKidAIFunil() {
                       src={network.icon || "/placeholder.svg"}
                       alt={network.name}
                       className="w-6 h-6 object-contain"
+                      loading="lazy"
                     />
                     <span className="text-white font-semibold text-sm">{network.name}</span>
                   </motion.div>
@@ -484,7 +761,7 @@ export default function SafeKidAIFunil() {
                 className="text-center"
               >
                 <Button
-                  onClick={() => setCurrentStep("headlines")}
+                  onClick={() => handleStepTransition("headlines")}
                   className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md"
                 >
                   <Shield className="w-6 h-6 mr-2" />
@@ -494,224 +771,6 @@ export default function SafeKidAIFunil() {
                   🔒 100% Confidencial • ⚡ Análise em tempo real • ✅ Usado por +50.000 famílias
                 </p>
               </motion.div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Nova Seção: Headlines */}
-        {currentStep === "headlines" && (
-          <motion.div
-            key="headlines"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="min-h-screen relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #0B1A30 0%, #1a2332 50%, #0B1A30 100%)",
-            }}
-          >
-            {/* Background Image */}
-            <div
-              className="absolute inset-0 opacity-15"
-              style={{
-                backgroundImage: "url('/background/tech-kids.jpeg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: "blur(2px)",
-              }}
-            />
-
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-
-            <div className="relative z-10 min-h-screen flex flex-col justify-center py-8 md:py-16">
-              <div className="container mx-auto px-4 max-w-5xl">
-                {/* Header */}
-                <motion.div
-                  initial={{ y: -30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className="text-center mb-8 md:mb-12"
-                >
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-                    Casos Reais que Chocaram o Mundo
-                  </h2>
-                  <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-6">
-                    Manchetes de veículos renomados mostram a realidade que muitos pais preferem ignorar
-                  </p>
-                </motion.div>
-
-                {/* Carrossel Visual de Imagens */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="relative mb-8 md:mb-12"
-                >
-                  <div className="overflow-hidden rounded-2xl max-w-3xl mx-auto">
-                    <div
-                      className="flex transition-transform duration-500 ease-in-out"
-                      style={{ transform: `translateX(-${currentHeadlineImageIndex * 100}%)` }}
-                    >
-                      {headlineImages.map((headline) => (
-                        <div key={headline.id} className="w-full flex-shrink-0 relative">
-                          <div className="relative">
-                            <img
-                              src={headline.image || "/placeholder.svg"}
-                              alt={headline.title}
-                              className="w-full h-auto object-cover rounded-2xl"
-                            />
-                            {/* Selo REAL CASE */}
-                            <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 shadow-lg">
-                              ⚠️ REAL CASE
-                            </div>
-                            {/* Overlay com informações */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 rounded-b-2xl">
-                              <p className="text-white font-bold text-lg mb-1">{headline.source}</p>
-                              <p className="text-gray-300 text-sm">{headline.title}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Controles do carrossel de imagens */}
-                  <div className="flex justify-center items-center gap-4 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={prevHeadlineImage}
-                      className="border-[#1FE3C2] text-white hover:bg-[#1FE3C2]/20 bg-transparent p-2 rounded-full"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-
-                    <div className="flex gap-2">
-                      {headlineImages.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentHeadlineImageIndex(index)}
-                          className={`w-3 h-3 rounded-full transition-colors ${
-                            index === currentHeadlineImageIndex ? "bg-[#1FE3C2]" : "bg-gray-500"
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={nextHeadlineImage}
-                      className="border-[#1FE3C2] text-white hover:bg-[#1FE3C2]/20 bg-transparent p-2 rounded-full"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-
-                {/* Carrossel Textual */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="relative mb-8 md:mb-12"
-                >
-                  <Card className="bg-gray-900/90 border border-gray-700 rounded-2xl shadow-2xl max-w-4xl mx-auto">
-                    <CardContent className="p-6 md:p-8">
-                      <div className="overflow-hidden">
-                        <div
-                          className="flex transition-transform duration-500 ease-in-out"
-                          style={{ transform: `translateX(-${currentHeadlineTextIndex * 100}%)` }}
-                        >
-                          {headlineTexts.map((text) => (
-                            <div key={text.id} className="w-full flex-shrink-0">
-                              <div className="text-center">
-                                <div className="flex items-center justify-center gap-3 mb-4">
-                                  <span className="text-2xl">{text.icon}</span>
-                                  <span className="text-[#1FE3C2] font-bold text-lg">{text.source}</span>
-                                </div>
-                                <h3 className="text-xl md:text-2xl font-bold text-white mb-3 leading-tight cursor-pointer hover:text-[#1FE3C2] transition-colors">
-                                  "{text.headline}"
-                                </h3>
-                                <p className="text-gray-400 text-sm">{text.date}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Controles do carrossel textual */}
-                  <div className="flex justify-center items-center gap-4 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={prevHeadlineText}
-                      className="border-gray-600 text-gray-400 hover:bg-gray-800 bg-transparent p-2 rounded-full"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-
-                    <div className="flex gap-2">
-                      {headlineTexts.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentHeadlineTextIndex(index)}
-                          className={`w-3 h-3 rounded-full transition-colors ${
-                            index === currentHeadlineTextIndex ? "bg-[#1FE3C2]" : "bg-gray-600"
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={nextHeadlineText}
-                      className="border-gray-600 text-gray-400 hover:bg-gray-800 bg-transparent p-2 rounded-full"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-
-                {/* Frase de Alerta */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-center mb-8 md:mb-12"
-                >
-                  <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border-2 border-red-500/50 rounded-2xl p-6 md:p-8 max-w-2xl mx-auto">
-                    <h3 className="text-2xl md:text-3xl font-bold text-red-400 mb-4 flex items-center justify-center gap-3">
-                      ⚠️ Não deixe seu filho virar a próxima estatística.
-                    </h3>
-                    <p className="text-gray-300 text-lg">
-                      A cada dia que passa, mais crianças se tornam vítimas de predadores online.
-                      <br />
-                      <span className="text-[#FFCE00] font-bold">Aja agora, antes que seja tarde demais.</span>
-                    </p>
-                  </div>
-                </motion.div>
-
-                {/* CTA Principal */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="text-center"
-                >
-                  <Button
-                    onClick={() => setCurrentStep("form")}
-                    className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md mb-4"
-                  >
-                    <Shield className="w-6 h-6 mr-2" />
-                    Verificar Meu Filho Agora
-                  </Button>
-                  <p className="text-gray-400 text-sm">🔒 Análise 100% confidencial • ⚡ Resultados em tempo real</p>
-                </motion.div>
-              </div>
             </div>
           </motion.div>
         )}
@@ -761,26 +820,23 @@ export default function SafeKidAIFunil() {
                         placeholder="Digite o nome completo"
                         className="input-enhanced h-12 text-base"
                         defaultValue={childName}
+                        onChange={(e) => setChildName(e.target.value)}
                         required
                       />
                     </div>
 
-                    {/* WhatsApp */}
+                    {/* Número do filho */}
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">Número de WhatsApp</label>
-                      <Input
-                        ref={whatsappInputRef}
-                        type="tel"
-                        placeholder="(11) 99999-9999"
+                      <label className="block text-gray-700 font-semibold mb-2">Número do filho(a)</label>
+                      <CountryPhoneInput
                         value={whatsappNumber}
-                        onChange={(e) => handleWhatsAppChange(e.target.value)}
-                        className="input-enhanced h-12 text-base"
-                        maxLength={15}
-                        required
+                        onChange={handlePhoneChange}
+                        placeholder="Digite o número"
+                        className="text-base"
                       />
 
                       {/* Exibição da foto de perfil */}
-                      {whatsappNumber.replace(/\D/g, "").length >= 10 && (
+                      {whatsappNumber.replace(/\D/g, "").length >= 8 && (
                         <div className="mt-4 p-4 bg-gray-50 rounded-xl border">
                           <p className="text-sm font-semibold text-gray-700 mb-3 text-center">
                             {isLoadingProfile ? "Buscando foto de perfil..." : "Foto de perfil detectada:"}
@@ -789,7 +845,7 @@ export default function SafeKidAIFunil() {
                           <div className="flex justify-center">
                             {isLoadingProfile ? (
                               <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                                <div className="spinner-tech w-8 h-8"></div>
+                                <LoadingSpinner size="sm" message="" />
                               </div>
                             ) : (
                               <div className="relative">
@@ -797,8 +853,6 @@ export default function SafeKidAIFunil() {
                                   src={
                                     profileImage ||
                                     `https://ui-avatars.com/api/?name=User&background=885EFF&color=fff&size=200` ||
-                                    "/placeholder.svg" ||
-                                    "/placeholder.svg" ||
                                     "/placeholder.svg"
                                   }
                                   alt="Foto de perfil"
@@ -835,13 +889,15 @@ export default function SafeKidAIFunil() {
                     <Button
                       type="button"
                       onClick={handleStartAnalysis}
-                      disabled={!canProceed()}
-                      className="w-full bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 text-lg rounded-xl btn-enhanced disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!canProceed() || isTransitioning}
+                      className="w-full bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 text-lg rounded-xl btn-enhanced disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                     >
-                      {isLoadingProfile ? (
+                      {isLoadingProfile || isTransitioning ? (
                         <>
-                          <div className="spinner-tech w-5 h-5 mr-2"></div>
-                          Verificando perfil...
+                          <LoadingSpinner size="sm" message="" />
+                          <span className="ml-2">
+                            {isTransitioning ? "Iniciando análise..." : "Verificando perfil..."}
+                          </span>
                         </>
                       ) : (
                         <>
@@ -851,7 +907,7 @@ export default function SafeKidAIFunil() {
                       )}
                     </Button>
 
-                    {profileLoaded && (
+                    {canProceed() && !isLoadingProfile && !isTransitioning && (
                       <p className="text-green-600 text-sm text-center font-medium">
                         ✅ Pressione Enter ou clique no botão para continuar
                       </p>
@@ -918,7 +974,7 @@ export default function SafeKidAIFunil() {
                     <img
                       src={
                         profileImage ||
-                        `https://ui-avatars.com/api/?name=${childName || "/placeholder.svg"}&background=885EFF&color=fff&size=200`
+                        `https://ui-avatars.com/api/?name=${childName || "User"}&background=885EFF&color=fff&size=200`
                       }
                       alt="Profile"
                       className="w-24 h-24 rounded-2xl mx-auto border-4 border-[#1FE3C2] shadow-lg"
@@ -936,6 +992,17 @@ export default function SafeKidAIFunil() {
                   </div>
 
                   <p className="text-white text-xl font-bold mb-8">{Math.round(scanProgress)}% concluído</p>
+
+                  {/* Prova Social Dinâmica */}
+                  <motion.div
+                    key={currentProofIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-6"
+                  >
+                    <p className="text-green-400 text-sm font-medium">{socialProofs[currentProofIndex]}</p>
+                  </motion.div>
 
                   {/* Social Networks Status */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
@@ -961,6 +1028,7 @@ export default function SafeKidAIFunil() {
                             src={network.icon || "/placeholder.svg"}
                             alt={network.name}
                             className="w-8 h-8 mx-auto mb-2 object-contain"
+                            loading="lazy"
                           />
                           <div className="text-white font-semibold text-sm mb-1">{network.name}</div>
                           {isScanned && (
@@ -991,186 +1059,10 @@ export default function SafeKidAIFunil() {
           </motion.div>
         )}
 
-        {/* NOVA SEÇÃO: Casos Reais */}
-        {currentStep === "realcases" && (
+        {/* Nova Seção: Simulação de Conversa Suspeita */}
+        {currentStep === "chat-simulation" && (
           <motion.div
-            key="realcases"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="min-h-screen relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%)",
-            }}
-          >
-            {/* Subtle pattern overlay */}
-            <div className="absolute inset-0 opacity-5">
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23000000' fillOpacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                }}
-              />
-            </div>
-
-            <div className="relative z-10 min-h-screen flex flex-col justify-center py-8 md:py-16">
-              <div className="container mx-auto px-4 max-w-6xl">
-                {/* Header */}
-                <motion.div
-                  initial={{ y: -30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className="text-center mb-8 md:mb-12"
-                >
-                  <div className="inline-flex items-center gap-2 bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                    <AlertTriangle className="w-4 h-4" />
-                    CASOS REAIS
-                  </div>
-                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                    Manchetes que Chocaram o Mundo
-                  </h2>
-                  <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-                    Casos reais reportados por veículos de imprensa renomados mostram a urgência de proteger nossas
-                    crianças online.
-                  </p>
-                </motion.div>
-
-                {/* Carrossel de Casos Reais */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="relative mb-8 md:mb-12"
-                >
-                  {/* Container do carrossel */}
-                  <div className="overflow-hidden rounded-2xl">
-                    <div
-                      className="flex transition-transform duration-500 ease-in-out"
-                      style={{ transform: `translateX(-${currentRealCaseIndex * 100}%)` }}
-                    >
-                      {realCases.map((realCase, index) => (
-                        <motion.div
-                          key={realCase.id}
-                          className="w-full flex-shrink-0"
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{
-                            opacity: index === currentRealCaseIndex ? 1 : 0.7,
-                            scale: index === currentRealCaseIndex ? 1 : 0.95,
-                          }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <Card
-                            className={`${realCase.bgColor} border-0 shadow-2xl rounded-2xl overflow-hidden mx-2 md:mx-4`}
-                          >
-                            <CardContent className="p-6 md:p-8 lg:p-12">
-                              {/* Selo REAL CASE */}
-                              <div className="flex justify-between items-start mb-6">
-                                <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                  ⚠️ REAL CASE
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-2xl">{realCase.logo}</span>
-                                  <span className={`font-bold text-sm ${realCase.textColor}`}>{realCase.outlet}</span>
-                                </div>
-                              </div>
-
-                              {/* Headline */}
-                              <h3
-                                className={`text-2xl md:text-3xl lg:text-4xl font-bold ${realCase.textColor} mb-4 leading-tight`}
-                              >
-                                "{realCase.headline}"
-                              </h3>
-
-                              {/* Subheadline */}
-                              <p className={`text-base md:text-lg ${realCase.textColor.replace("900", "700")} mb-6`}>
-                                {realCase.subheadline}
-                              </p>
-
-                              {/* Source indicator */}
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <ExternalLink className="w-4 h-4" />
-                                <span>Fonte verificada: {realCase.outlet}</span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Controles do carrossel */}
-                  <div className="flex justify-center items-center gap-4 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={prevRealCase}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-100 bg-white p-2 rounded-full shadow-md"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-
-                    <div className="flex gap-2">
-                      {realCases.map((_, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setCurrentRealCaseIndex(index)}
-                          className={`w-3 h-3 rounded-full transition-colors ${
-                            index === currentRealCaseIndex ? "bg-red-500" : "bg-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={nextRealCase}
-                      className="border-gray-300 text-gray-700 hover:bg-gray-100 bg-white p-2 rounded-full shadow-md"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-
-                {/* Estatística de impacto */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 md:p-8 mb-8 text-center"
-                >
-                  <div className="text-4xl md:text-5xl font-bold text-red-600 mb-2">82%</div>
-                  <p className="text-lg md:text-xl text-red-800 font-semibold mb-2">
-                    Aumento em crimes de aliciamento online nos últimos 5 anos
-                  </p>
-                  <p className="text-red-700">
-                    Segundo dados oficiais do NSPCC (National Society for the Prevention of Cruelty to Children)
-                  </p>
-                </motion.div>
-
-                {/* CTA Principal */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-center"
-                >
-                  <Button
-                    onClick={() => setCurrentStep("conversion")}
-                    className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md mb-4"
-                  >
-                    <Lock className="w-6 h-6 mr-2" />🔒 Quero proteger meu filho agora
-                  </Button>
-                  <p className="text-gray-600 text-sm">Não deixe seu filho se tornar a próxima estatística</p>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Tela de Conversão */}
-        {currentStep === "conversion" && (
-          <motion.div
-            key="conversion"
+            key="chat-simulation"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1190,243 +1082,101 @@ export default function SafeKidAIFunil() {
               }}
             />
 
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+            <div className="relative z-10 container mx-auto px-4 py-8 flex flex-col justify-center min-h-screen">
+              {/* Header */}
+              <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500 rounded-full mb-4">
+                  <MessageCircle className="w-8 h-8 text-white" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">🚨 Conversa Suspeita Detectada</h2>
+                <p className="text-lg text-red-400 mb-6">
+                  Exemplo do tipo de conversa encontrada no perfil de <strong>{childName}</strong>
+                </p>
+              </motion.div>
 
-            <div className="relative z-10 min-h-screen flex flex-col">
-              {/* Container principal com padding adequado */}
-              <div className="flex-1 container mx-auto px-4 py-6 md:py-12 flex flex-col justify-center max-w-4xl">
-                {/* Alert Icon */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.5, type: "spring" }}
-                  className="text-center mb-6"
-                >
-                  <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] rounded-full shadow-2xl animate-pulse-glow mb-4">
-                    <AlertTriangle className="w-8 h-8 md:w-10 md:h-10 text-white" />
+              {/* Chat Simulation */}
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="max-w-md mx-auto mb-8"
+              >
+                <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
+                  {/* Chat Header */}
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-700">
+                    <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm">?</span>
+                    </div>
+                    <div>
+                      <h4 className="text-white font-semibold">Usuário Desconhecido</h4>
+                      <p className="text-gray-400 text-xs">Online agora</p>
+                    </div>
                   </div>
-                </motion.div>
 
-                {/* Main Headlines */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-center mb-6 md:mb-8"
-                >
-                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight px-2">
-                    🚨 Risco Detectado nas Atividades Digitais
-                    <br />
-                    <span className="text-[#FF4B4B]">do seu filho(a)!</span>
-                  </h1>
-                  <p className="text-base md:text-lg text-gray-300 mb-4 max-w-3xl mx-auto px-4">
-                    Análise parcial concluída com{" "}
-                    <span className="text-[#FF4B4B] font-bold">indícios de atividades perigosas</span> em redes sociais.
-                    Desbloqueie o relatório completo para visualizar detalhes e ativar a proteção preventiva.
-                  </p>
-                </motion.div>
-
-                {/* Profile Section */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8"
-                >
-                  <img
-                    src={
-                      profileImage ||
-                      `https://ui-avatars.com/api/?name=${childName || "/placeholder.svg"}&background=FF4B4B&color=fff&size=200`
-                    }
-                    alt="Perfil"
-                    className="w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-[#FF4B4B] shadow-lg"
-                  />
-                  <div className="text-left">
-                    <h3 className="text-white font-bold text-base md:text-lg">{childName}</h3>
-                    <p className="text-[#FF4B4B] text-sm font-medium">Status: Risco Detectado</p>
+                  {/* Chat Messages */}
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {suspiciousChat.slice(0, chatMessageIndex + 1).map((message, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.5 }}
+                        className={`flex ${message.sender === "child" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[80%] p-3 rounded-2xl ${
+                            message.sender === "child"
+                              ? "bg-blue-500 text-white rounded-br-sm"
+                              : "bg-red-500/20 border border-red-500/30 text-red-300 rounded-bl-sm"
+                          }`}
+                        >
+                          <p className="text-sm">{message.message}</p>
+                          <p className="text-xs opacity-70 mt-1">{message.time}</p>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
+                </div>
+              </motion.div>
 
-                {/* Simulated Report Preview */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="w-full max-w-2xl mx-auto mb-6 md:mb-8"
-                >
-                  <Card className="bg-gray-900/90 border-2 border-[#FF4B4B] rounded-2xl shadow-2xl overflow-hidden">
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <Shield className="w-5 h-5 md:w-6 md:h-6 text-[#1FE3C2] flex-shrink-0" />
-                        <h3 className="text-white font-bold text-base md:text-lg">Relatório de Segurança Digital</h3>
-                      </div>
-
-                      {/* Report Items */}
-                      <div className="space-y-3 md:space-y-4">
-                        {/* WhatsApp Alert */}
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 md:p-4">
-                          <div className="flex items-center gap-2 md:gap-3 mb-2">
-                            <img
-                              src="/social-icons/whatsapp.png"
-                              alt="WhatsApp"
-                              className="w-5 h-5 md:w-6 md:h-6 object-contain flex-shrink-0"
-                            />
-                            <span className="text-white font-semibold text-sm md:text-base">WhatsApp</span>
-                            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                              ALERTA
-                            </span>
-                          </div>
-                          <p className="text-red-400 text-xs md:text-sm mb-2">
-                            ⚠️ Conversa suspeita identificada em 22/06/2025
-                          </p>
-                          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 relative min-h-[60px]">
-                            <div className="absolute inset-0 bg-black/70 backdrop-blur-md rounded-lg flex items-center justify-center">
-                              <div className="text-center">
-                                <Lock className="w-6 h-6 md:w-8 md:h-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-gray-400 text-xs md:text-sm font-medium">
-                                  🔒 Conteúdo disponível após desbloqueio
-                                </p>
-                              </div>
-                            </div>
-                            <p className="text-gray-300 text-xs md:text-sm blur-sm">
-                              Mensagem de usuário desconhecido solicitando informações pessoais...
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Instagram Alert */}
-                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 md:p-4">
-                          <div className="flex items-center gap-2 md:gap-3 mb-2">
-                            <img
-                              src="/social-icons/instagram.png"
-                              alt="Instagram"
-                              className="w-5 h-5 md:w-6 md:h-6 object-contain flex-shrink-0"
-                            />
-                            <span className="text-white font-semibold text-sm md:text-base">Instagram</span>
-                            <span className="bg-yellow-500 text-black px-2 py-1 rounded-full text-xs font-bold">
-                              ATENÇÃO
-                            </span>
-                          </div>
-                          <p className="text-yellow-400 text-xs md:text-sm mb-2">
-                            ⚠️ Tentativa de aliciamento detectada
-                          </p>
-                          <div className="bg-black/50 backdrop-blur-sm rounded-lg p-3 relative min-h-[60px]">
-                            <div className="absolute inset-0 bg-black/70 backdrop-blur-md rounded-lg flex items-center justify-center">
-                              <div className="text-center">
-                                <Lock className="w-6 h-6 md:w-8 md:h-8 text-gray-400 mx-auto mb-2" />
-                                <p className="text-gray-400 text-xs md:text-sm font-medium">
-                                  🔒 Conteúdo disponível após desbloqueio
-                                </p>
-                              </div>
-                            </div>
-                            <p className="text-gray-300 text-xs md:text-sm blur-sm">
-                              Perfil suspeito tentando estabelecer contato privado...
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* More Reports Locked */}
-                        <div className="bg-gray-800/50 border border-gray-600 rounded-lg p-3 md:p-4 relative min-h-[80px]">
-                          <div className="absolute inset-0 bg-black/70 backdrop-blur-md rounded-lg flex items-center justify-center">
-                            <div className="text-center">
-                              <Lock className="w-8 h-8 md:w-10 md:h-10 text-gray-400 mx-auto mb-2" />
-                              <p className="text-gray-400 font-medium text-sm md:text-base">
-                                +3 alertas adicionais bloqueados
-                              </p>
-                              <p className="text-gray-500 text-xs md:text-sm">TikTok, Telegram, Snapchat</p>
-                            </div>
-                          </div>
-                          <div className="blur-sm">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-5 h-5 md:w-6 md:h-6 bg-gray-600 rounded"></div>
-                              <span className="text-gray-400 text-sm">Análise completa</span>
-                            </div>
-                            <p className="text-gray-500 text-xs md:text-sm">Conteúdo detalhado disponível...</p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Main CTA */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="text-center mb-6"
-                >
+              {chatMessageIndex >= suspiciousChat.length - 1 && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mt-6">
                   <Button
-                    onClick={() => setCurrentStep("news")}
-                    className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-3 md:py-4 px-6 md:px-8 text-base md:text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-sm md:max-w-md mb-3 transform hover:scale-105 transition-all duration-300"
+                    onClick={() => handleStepTransition("conversion")}
+                    className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-3 px-6 rounded-xl"
                   >
-                    <Lock className="w-5 h-5 md:w-6 md:h-6 mr-2" />🔓 Desbloquear Relatório Completo
+                    Continuar Análise →
                   </Button>
-                  <p className="text-[#1FE3C2] text-xs md:text-sm font-medium">
-                    Acesso único. Garantia incondicional de 7 dias.
-                  </p>
                 </motion.div>
+              )}
 
-                {/* Social Proof */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.0 }}
-                  className="text-center mb-6"
-                >
-                  <p className="text-gray-300 text-xs md:text-sm mb-4">
-                    Recomendado por <span className="text-[#1FE3C2] font-bold">+50.000 pais</span> em todo o mundo
-                  </p>
-
-                  {/* Trust Badges */}
-                  <div className="flex items-center justify-center gap-4 md:gap-6 mb-4 flex-wrap">
-                    <div className="flex items-center gap-2 text-green-400 text-xs">
-                      <Shield className="w-3 h-3 md:w-4 md:h-4" />
-                      <span>LGPD</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-green-400 text-xs">
-                      <Lock className="w-3 h-3 md:w-4 md:h-4" />
-                      <span>SSL</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-green-400 text-xs">
-                      <Eye className="w-3 h-3 md:w-4 md:h-4" />
-                      <span>Segurança</span>
-                    </div>
-                  </div>
-
-                  {/* Media Logos */}
-                  <div className="flex items-center justify-center gap-4 opacity-60">
-                    <span className="text-gray-400 text-xs font-medium">BBC</span>
-                    <span className="text-gray-400 text-xs">•</span>
-                    <span className="text-gray-400 text-xs font-medium">The Guardian</span>
-                    <span className="text-gray-400 text-xs">•</span>
-                    <span className="text-gray-400 text-xs font-medium">CNN</span>
-                  </div>
-                </motion.div>
-
-                {/* Footer Links */}
-                <motion.div
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.2 }}
-                  className="text-center"
-                >
-                  <div className="flex items-center justify-center gap-4 md:gap-6 text-xs text-gray-500">
-                    <button className="hover:text-gray-300 transition-colors">Política de Privacidade</button>
-                    <span>•</span>
-                    <button className="hover:text-gray-300 transition-colors">Termos de Uso</button>
-                  </div>
-                </motion.div>
-              </div>
+              {/* Warning Message */}
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="bg-red-500/10 border-2 border-red-500 rounded-xl p-6 max-w-2xl mx-auto text-center"
+              >
+                <h3 className="text-xl font-bold text-red-400 mb-2">⚠️ PADRÃO DE ALICIAMENTO IDENTIFICADO</h3>
+                <p className="text-white mb-4">
+                  Esta é apenas uma amostra. O relatório completo contém análise detalhada de todas as conversas
+                  suspeitas.
+                </p>
+                <div className="text-sm text-gray-300 space-y-1">
+                  <p>• Tentativa de isolamento ("entre nós")</p>
+                  <p>• Elogios inadequados para a idade</p>
+                  <p>• Solicitação de contato privado</p>
+                  <p>• Construção de confiança falsa</p>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
         )}
 
-        {/* Carrossel de Casos Reais (mantido como estava) */}
-        {currentStep === "news" && (
+        {/* Nova Seção: Headlines */}
+        {currentStep === "headlines" && (
           <motion.div
-            key="news"
+            key="headlines"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1477,6 +1227,7 @@ export default function SafeKidAIFunil() {
                               src={news.image || "/placeholder.svg"}
                               alt={news.title}
                               className="w-full h-auto object-cover"
+                              loading="lazy"
                             />
                           </CardContent>
                         </Card>
@@ -1543,7 +1294,7 @@ export default function SafeKidAIFunil() {
                 className="text-center"
               >
                 <Button
-                  onClick={() => setCurrentStep("final")}
+                  onClick={() => handleStepTransition("form")}
                   className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md"
                 >
                   <Shield className="w-6 h-6 mr-2" />
@@ -1555,10 +1306,10 @@ export default function SafeKidAIFunil() {
           </motion.div>
         )}
 
-        {/* Tela Final */}
-        {currentStep === "final" && (
+        {/* Tela de Conversão */}
+        {currentStep === "conversion" && (
           <motion.div
-            key="final"
+            key="conversion"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1569,116 +1320,760 @@ export default function SafeKidAIFunil() {
           >
             {/* Background Image */}
             <div
-              className="absolute inset-0 opacity-20"
+              className="absolute inset-0 opacity-10"
               style={{
                 backgroundImage: "url('/background/tech-kids.jpeg')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                filter: "blur(1px)",
+                filter: "blur(2px)",
               }}
             />
 
             {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
 
-            <div className="relative z-10 container mx-auto px-4 py-8 flex flex-col justify-center min-h-screen text-center">
-              {/* Alert Icon */}
+            <div className="relative z-10 min-h-screen flex flex-col">
+              {/* Container principal com padding adequado */}
+              <div className="flex-1 container mx-auto px-4 py-6 md:py-12 flex flex-col justify-center max-w-4xl">
+                {/* Timer de Urgência */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-center mb-4"
+                >
+                  <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-4 max-w-md mx-auto">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Clock className="w-5 h-5 text-red-400" />
+                      <span className="text-red-400 font-bold">ACESSO LIMITADO</span>
+                    </div>
+                    <div className="text-3xl font-bold text-white">{formatTime(timeLeft)}</div>
+                    <p className="text-red-300 text-sm">Tempo restante para acessar o relatório</p>
+                  </div>
+                </motion.div>
+
+                {/* Header Principal */}
+                <motion.div
+                  initial={{ y: -30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center mb-6"
+                >
+                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+                    🚨 ANÁLISE COMPLETA DE <span className="text-red-400">{childName.toUpperCase()}</span>
+                  </h1>
+                  <p className="text-lg md:text-xl text-[#FFCE00] font-semibold mb-4">
+                    Foram detectadas <span className="text-red-400 font-bold">4 situações de risco</span> que requerem
+                    atenção imediata
+                  </p>
+                  <div className="text-center">
+                    <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+                      RELATÓRIO CONFIDENCIAL
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* Resumo dos Riscos */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+                >
+                  {[
+                    {
+                      platform: "Instagram",
+                      risk: "ALTO",
+                      issue: "Tentativa de aliciamento detectada",
+                      color: "border-red-500 bg-red-500/10",
+                      icon: "❌",
+                    },
+                    {
+                      platform: "Snapchat",
+                      risk: "CRÍTICO",
+                      issue: "Interação com perfil desconhecido",
+                      color: "border-red-600 bg-red-600/20",
+                      icon: "🚨",
+                    },
+                    {
+                      platform: "TikTok",
+                      risk: "ALTO",
+                      issue: "Conteúdo impróprio visualizado",
+                      color: "border-red-500 bg-red-500/10",
+                      icon: "⚠️",
+                    },
+                    {
+                      platform: "WhatsApp",
+                      risk: "CRÍTICO",
+                      issue: "Conversa suspeita identificada",
+                      color: "border-red-600 bg-red-600/20",
+                      icon: "🚨",
+                    },
+                  ].map((item, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ x: index % 2 === 0 ? -50 : 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.6 + index * 0.1 }}
+                      className={`p-4 rounded-xl border-2 ${item.color}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-bold text-white">{item.platform}</h3>
+                        <span className="text-2xl">{item.icon}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          RISCO {item.risk}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 text-sm">{item.issue}</p>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Estatística Local */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6 text-center"
+                >
+                  <p className="text-yellow-400 font-semibold">{getLocalStatistic()}</p>
+                </motion.div>
+
+                {/* CTA Principal */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="text-center"
+                >
+                  <Button
+                    onClick={() => handleStepTransition("checkout")}
+                    className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md transform hover:scale-105 transition-all duration-200"
+                  >
+                    {React.createElement(ctaVariants[ctaVariant].icon, { className: "w-6 h-6 mr-2" })}
+                    Get Complete Report - $27
+                  </Button>
+                  <p className="text-gray-400 text-sm mt-4">
+                    🔒 Secure Payment • ⚡ Instant Access • 🛡️ 7-Day Guarantee
+                  </p>
+                </motion.div>
+
+                {/* Depoimentos */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.2 }}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+                >
+                  {realTestimonials.map((testimonial, index) => (
+                    <div key={index} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                      <div className="flex items-center gap-3 mb-3">
+                        <img
+                          src={testimonial.avatar || "/placeholder.svg"}
+                          alt={testimonial.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                          loading="lazy"
+                        />
+                        <div>
+                          <h4 className="text-white font-semibold">{testimonial.name}</h4>
+                          <p className="text-gray-400 text-sm">{testimonial.child}</p>
+                        </div>
+                        {testimonial.verified && <CheckCircle className="w-5 h-5 text-[#1FE3C2]" />}
+                      </div>
+                      <p className="text-gray-300 text-sm italic">"{testimonial.text}"</p>
+                      <div className="flex text-[#FFCE00] mt-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-current" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+
+                {/* Comentários Sociais */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.4 }}
+                  className="space-y-3"
+                >
+                  {socialComments.map((comment, index) => (
+                    <div key={index} className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={comment.avatar || "/placeholder.svg"}
+                          alt={comment.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-white font-semibold text-sm">{comment.name}</h4>
+                            <span className="text-gray-400 text-xs">{comment.time}</span>
+                          </div>
+                          <p className="text-gray-300 text-sm">{comment.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Página Final de Oferta */}
+        {currentStep === "final" && (
+          <motion.div
+            key="final"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gray-50"
+          >
+            <div className="container mx-auto px-4 py-8 max-w-4xl">
+              {/* Chamada Personalizada */}
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, type: "spring" }}
-                className="mb-8"
+                initial={{ y: -30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] rounded-2xl p-6 text-center mb-8"
               >
-                <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] rounded-full shadow-2xl animate-pulse-glow">
-                  <AlertTriangle className="w-12 h-12 text-white" />
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                  🔐 Complete Report Ready for: <span className="text-yellow-300">{childName}</span>
+                </h1>
+                <p className="text-white/90">Unlock now and protect your child from digital threats</p>
+              </motion.div>
+
+              {/* Progresso da Missão */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white rounded-xl p-6 mb-6 border border-gray-200 shadow-sm"
+              >
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  🧩 Verification Progress: <span className="text-[#1FE3C2]">92% Complete</span>
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-700">Detection completed</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-700">Report generated</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-5 h-5 text-orange-500" />
+                    <span className="text-gray-700 font-semibold">Final access unlock pending</span>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Progress value={92} className="h-3" />
                 </div>
               </motion.div>
 
-              {/* Results */}
+              {/* CTA Principal */}
               <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="mb-8"
+                className="text-center"
               >
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-                  🚨 ALERTA CRÍTICO DETECTADO!
-                </h2>
-                <p className="text-lg md:text-xl text-[#FF4B4B] mb-6">
-                  Detectamos <strong>atividade suspeita</strong> no perfil de <strong>{childName}</strong>
-                </p>
+                <Button
+                  onClick={() => handleStepTransition("checkout")}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-6 px-8 text-xl rounded-xl shadow-2xl mb-4 transform hover:scale-105 transition-all duration-200"
+                >
+                  <motion.div
+                    animate={{ rotate: [0, -15, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="mr-3"
+                  >
+                    🔓
+                  </motion.div>
+                  Get Complete Report - $27
+                </Button>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
 
-                {/* Profile and Networks */}
-                <div className="flex items-center justify-center gap-6 mb-8">
-                  <img
-                    src={
-                      profileImage ||
-                      `https://ui-avatars.com/api/?name=${childName || "/placeholder.svg"}&background=FF4B4B&color=fff&size=200`
-                    }
-                    alt="Perfil"
-                    className="w-20 h-20 rounded-full border-4 border-[#FF4B4B] shadow-lg"
-                  />
-                  <div className="flex gap-2">
-                    {Object.entries(scanResults)
-                      .filter(([_, result]) => result.status !== "safe")
-                      .map(([network, result], index) => {
-                        const networkData = socialNetworks.find((n) => n.name.toLowerCase() === network)
-                        return (
-                          <div key={network} className="relative">
-                            <div className="w-12 h-12 bg-red-500 rounded-full p-2 flex items-center justify-center">
-                              <img
-                                src={networkData?.icon || "/placeholder.svg"}
-                                alt={network}
-                                className="w-6 h-6 object-contain"
-                              />
-                            </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF4B4B] rounded-full"></div>
+        {/* Página de Checkout */}
+        {currentStep === "checkout" && (
+          <motion.div
+            key="checkout"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gray-50"
+          >
+            <div className="container mx-auto px-4 py-8 max-w-4xl">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">🔍 SafeKid AI – Complete Digital Report</h1>
+                <p className="text-gray-600">Secure checkout - Your information is protected</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Product Details */}
+                <div className="space-y-6">
+                  {/* Main Product */}
+                  <Card className="border-2 border-blue-200">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <Shield className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-800 mb-2">SafeKid AI Digital Report</h3>
+                          <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                            <li>✓ Social media scanning</li>
+                            <li>✓ Suspicious profile and message detection</li>
+                            <li>✓ Psychological manipulation analysis</li>
+                            <li>✓ Immediate and confidential delivery</li>
+                          </ul>
+                          <div className="text-2xl font-bold text-blue-600">$27</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Order Bump */}
+                  <Card
+                    className={`border-2 transition-all duration-200 ${orderBumpSelected ? "border-blue-400 bg-blue-50" : "border-gray-200"}`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          checked={orderBumpSelected}
+                          onCheckedChange={handleOrderBumpChange}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Shield className="w-5 h-5 text-blue-600" />
+                            <h3 className="text-lg font-bold text-gray-800">🛡️ 30-Day Continuous Protection</h3>
                           </div>
-                        )
-                      })}
+                          <p className="text-sm text-gray-600 mb-3">
+                            Receive automatic alerts if new risks are detected. Includes weekly re-analysis and special
+                            support.
+                          </p>
+                          <div className="bg-blue-100 border border-blue-200 rounded-lg p-3 mb-3">
+                            <p className="text-sm text-blue-800 font-medium">
+                              ✅ Add for just <span className="font-bold">+$17</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Order Summary & Payment */}
+                <div className="space-y-6">
+                  {/* Order Summary */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">Order Summary</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>SafeKid AI Digital Report</span>
+                          <span>$27.00</span>
+                        </div>
+                        {orderBumpSelected && (
+                          <div className="flex justify-between text-blue-600">
+                            <span>30-Day Protection</span>
+                            <span>$17.00</span>
+                          </div>
+                        )}
+                        <hr />
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total</span>
+                          <span>${purchaseData.totalAmount}.00</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Payment Form */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">Payment Information</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <Input type="email" placeholder="your@email.com" className="w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                          <Input type="text" placeholder="John Doe" className="w-full" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                          <Input type="text" placeholder="1234 5678 9012 3456" className="w-full" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry</label>
+                            <Input type="text" placeholder="MM/YY" />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                            <Input type="text" placeholder="123" />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Purchase Button */}
+                  <Button
+                    onClick={handleMainCheckout}
+                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-4 text-lg rounded-xl shadow-lg"
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Complete Purchase - ${purchaseData.totalAmount}
+                  </Button>
+
+                  {/* Security Badges */}
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Lock className="w-4 h-4" />
+                        <span>SSL Encrypted</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Shield className="w-4 h-4" />
+                        <span>Secure Payment</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Protected by 256-bit SSL encryption</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Upsell 1 - Family Protection */}
+        {currentStep === "upsell1" && (
+          <motion.div
+            key="upsell1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center"
+          >
+            <div className="max-w-2xl mx-auto px-4 text-center">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="bg-white rounded-2xl p-8 shadow-2xl">
+                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Gift className="w-10 h-10 text-white" />
+                  </div>
+
+                  <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                    🎁 Protect Your Entire Family with SafeKid AI
+                  </h1>
+
+                  <div className="text-left mb-6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Monitoring for up to 3 profiles</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Monthly reports via WhatsApp</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Complete activity history</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Exclusive family support</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-6 mb-6">
+                    <div className="text-4xl font-bold text-blue-600 mb-2">Only $47</div>
+                    <p className="text-gray-600">One-time payment for complete family protection</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => handleUpsellPurchase(1, 47)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 text-lg rounded-xl"
+                    >
+                      YES, PROTECT MY FAMILY
+                    </Button>
+
+                    <button
+                      onClick={() => handleUpsellSkip(1)}
+                      className="w-full text-gray-500 hover:text-gray-700 underline"
+                    >
+                      No thanks, continue with single report
+                    </button>
                   </div>
                 </div>
               </motion.div>
+            </div>
+          </motion.div>
+        )}
 
-              {/* Warning Message */}
+        {/* Upsell 2 - Anti-Manipulation Guide */}
+        {currentStep === "upsell2" && (
+          <motion.div
+            key="upsell2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center"
+          >
+            <div className="max-w-2xl mx-auto px-4 text-center">
               <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="bg-[#FF4B4B]/10 border-2 border-[#FF4B4B] rounded-2xl p-6 mb-8 max-w-2xl mx-auto"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
               >
-                <h3 className="text-xl font-bold text-[#FFCE00] mb-4">
-                  A maioria dos pais só descobre quando é tarde demais…
-                </h3>
-                <p className="text-white text-lg mb-4">Proteja quem você ama enquanto ainda há tempo.</p>
+                <div className="bg-white rounded-2xl p-8 shadow-2xl">
+                  <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <BookOpen className="w-10 h-10 text-white" />
+                  </div>
 
-                {/* Risk Details */}
-                <div className="text-left space-y-2 text-sm">
-                  {Object.entries(scanResults)
-                    .filter(([_, result]) => result.status !== "safe")
-                    .map(([network, result]) => (
-                      <div key={network} className="flex items-start gap-2">
-                        <span className="text-[#FF4B4B] font-bold">•</span>
-                        <span className="text-gray-300">
-                          <strong className="text-white capitalize">{network}:</strong> {result.message}
-                        </span>
-                      </div>
-                    ))}
+                  <h1 className="text-3xl font-bold text-gray-800 mb-4">🧠 Help Your Child Recognize Online Threats</h1>
+
+                  <div className="text-left mb-6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>📘 Interactive Guide: How to avoid digital traps</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✅ Practical strategies for parents</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✅ Accessible and educational language</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✅ Immediate delivery via email</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-orange-100 to-red-100 rounded-xl p-6 mb-6">
+                    <div className="text-4xl font-bold text-orange-600 mb-2">Only $20</div>
+                    <p className="text-gray-600">Digital product (PDF + bonus videos)</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => handleUpsellPurchase(2, 20)}
+                      className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-4 text-lg rounded-xl"
+                    >
+                      YES, I WANT THIS GUIDE
+                    </Button>
+
+                    <button
+                      onClick={() => handleUpsellSkip(2)}
+                      className="w-full text-gray-500 hover:text-gray-700 underline"
+                    >
+                      No thanks, continue
+                    </button>
+                  </div>
                 </div>
               </motion.div>
+            </div>
+          </motion.div>
+        )}
 
-              {/* Final CTA */}
-              <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
-                <Button
-                  onClick={() => window.open("https://wa.me/5511999999999", "_blank")}
-                  className="bg-gradient-to-r from-[#1FE3C2] to-[#885EFF] hover:from-[#1BD4B8] hover:to-[#7B52FF] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md mb-4"
-                >
-                  <Shield className="w-6 h-6 mr-2" />
-                  Receber Relatório Completo
-                </Button>
-                <p className="text-gray-400 text-sm">
-                  🔒 Proteção garantida • ⚡ Suporte 24/7 • ✅ Resultados imediatos
+        {/* Upsell 3 - Lifetime Monitor */}
+        {currentStep === "upsell3" && (
+          <motion.div
+            key="upsell3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center"
+          >
+            <div className="max-w-2xl mx-auto px-4 text-center">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="bg-white rounded-2xl p-8 shadow-2xl">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Infinity className="w-10 h-10 text-white" />
+                  </div>
+
+                  <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                    🛡️ SafeKid Monitor Lifetime – Protection Forever
+                  </h1>
+
+                  <div className="text-left mb-6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Continuous monitoring without expiration</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Automatic monthly analysis</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Immediate alerts for new threats</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span>✔️ Lifetime support included</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl p-6 mb-6">
+                    <div className="text-4xl font-bold text-purple-600 mb-2">One-time $97</div>
+                    <p className="text-gray-600">Never pay again - lifetime protection</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => handleUpsellPurchase(3, 97)}
+                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-4 text-lg rounded-xl"
+                    >
+                      ACTIVATE LIFETIME PROTECTION
+                    </Button>
+
+                    <button
+                      onClick={() => handleUpsellSkip(3)}
+                      className="w-full text-gray-500 hover:text-gray-700 underline"
+                    >
+                      No thanks, continue to my report
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Página de Agradecimento */}
+        {currentStep === "thank-you" && (
+          <motion.div
+            key="thank-you"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center"
+          >
+            <div className="max-w-3xl mx-auto px-4 text-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <CheckCircle className="w-12 h-12 text-white" />
+              </motion.div>
+
+              <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">🎉 Mission Accomplished!</h1>
+                <p className="text-xl text-gray-600 mb-6">
+                  You have successfully activated digital protection for <strong>{childName}</strong>.
                 </p>
+
+                {/* Purchase Summary */}
+                <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Purchase Summary</h2>
+                  <div className="space-y-4 text-left max-w-md mx-auto">
+                    <div className="flex justify-between items-center">
+                      <span>✅ SafeKid AI Digital Report</span>
+                      <span className="font-bold">$27</span>
+                    </div>
+                    {purchaseData.orderBump && (
+                      <div className="flex justify-between items-center text-blue-600">
+                        <span>✅ 30-Day Protection</span>
+                        <span className="font-bold">$17</span>
+                      </div>
+                    )}
+                    {purchaseData.upsell1 && (
+                      <div className="flex justify-between items-center text-purple-600">
+                        <span>✅ Family Protection</span>
+                        <span className="font-bold">$47</span>
+                      </div>
+                    )}
+                    {purchaseData.upsell2 && (
+                      <div className="flex justify-between items-center text-orange-600">
+                        <span>✅ Anti-Manipulation Guide</span>
+                        <span className="font-bold">$20</span>
+                      </div>
+                    )}
+                    {purchaseData.upsell3 && (
+                      <div className="flex justify-between items-center text-indigo-600">
+                        <span>✅ Lifetime Monitor</span>
+                        <span className="font-bold">$97</span>
+                      </div>
+                    )}
+                    <hr className="my-4" />
+                    <div className="flex justify-between items-center text-xl font-bold">
+                      <span>Total Paid:</span>
+                      <span className="text-green-600">${purchaseData.totalAmount}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Steps */}
+                <div className="bg-white rounded-2xl p-8 shadow-lg mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Next Steps:</h2>
+                  <div className="space-y-4 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        1
+                      </div>
+                      <span>Check your email to download the complete report</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        2
+                      </div>
+                      <span>Continuous monitoring is now active</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                        3
+                      </div>
+                      <span>You'll receive real-time alerts on WhatsApp</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Support Contact */}
+                <div className="bg-gray-100 rounded-xl p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Need Support?</h3>
+                  <p className="text-gray-600 mb-4">Our team is here to help you 24/7</p>
+                  <div className="flex justify-center gap-4">
+                    <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp Support
+                    </Button>
+                    <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                      <Mail className="w-4 h-4" />
+                      Email Support
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] text-white font-bold py-3 px-8 rounded-xl"
+                >
+                  Protect Another Child
+                </Button>
               </motion.div>
             </div>
           </motion.div>
