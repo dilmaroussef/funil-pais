@@ -40,7 +40,7 @@ export default function SafeKidAIFunil() {
   const [chatMessageIndex, setChatMessageIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [scanResults, setScanResults] = useState({
-    telegram: { status: "safe", message: "Sem riscos detectados" },
+    telegram: { status: "safe", message: "No risks detected" },
     instagram: { status: "warning", message: "Tentativa de aliciamento detectada" },
     snapchat: { status: "danger", message: "Interação com perfil desconhecido" },
     tiktok: { status: "danger", message: "Conteúdo impróprio visualizado" },
@@ -93,36 +93,36 @@ export default function SafeKidAIFunil() {
 
   // Prova social dinâmica
   const socialProofs = [
-    "👩‍🦰 Mãe de Lucas desbloqueou o relatório há 2 minutos",
-    "🧑 João (RJ) ativou proteção agora mesmo",
-    "👩 Ana (SP) descobriu atividade suspeita há 1 minuto",
-    "🧔 Carlos (MG) protegeu sua filha há 3 minutos",
-    "👩‍🦱 Maria (PR) desbloqueou análise completa agora",
+    "Lucas's mom unlocked the report 2 minutes ago",
+    "John (NY) activated protection just now",
+    "Anna (CA) discovered suspicious activity 1 minute ago",
+    "Carlos (TX) protected his daughter 3 minutes ago",
+    "Maria (FL) unlocked complete analysis now",
   ]
 
   // Simulação de conversa suspeita
   const suspiciousChat = [
-    { sender: "stranger", message: "Você parece mais madura que sua idade...", time: "19:03" },
-    { sender: "child", message: "Sério? Rs", time: "19:04" },
-    { sender: "stranger", message: "Vamos manter isso entre nós, ok?", time: "19:05" },
-    { sender: "stranger", message: "Você tem WhatsApp? Podemos conversar melhor lá", time: "19:06" },
-    { sender: "child", message: "Não sei...", time: "19:07" },
-    { sender: "stranger", message: "Confie em mim, sou diferente dos outros", time: "19:08" },
+    { sender: "stranger", message: "You seem more mature than your age...", time: "19:03" },
+    { sender: "child", message: "Really? Lol", time: "19:04" },
+    { sender: "stranger", message: "Let's keep this between us, ok?", time: "19:05" },
+    { sender: "stranger", message: "Do you have WhatsApp? We can talk better there", time: "19:06" },
+    { sender: "child", message: "I don't know...", time: "19:07" },
+    { sender: "stranger", message: "Trust me, I'm different from the others", time: "19:08" },
   ]
 
   // Depoimentos reais
   const realTestimonials = [
     {
       name: "Carlos M.",
-      child: "pai da Isadora",
-      text: "Nunca pensei que minha filha pudesse estar conversando com um estranho assim. O SafeKid AI me mostrou coisas que eu jamais imaginava.",
+      child: "Isadora's father",
+      text: "I never thought my daughter could be talking to a stranger like that. SafeKid AI showed me things I never imagined.",
       avatar: "/testimonials/carlos-testimonial.jpg",
       verified: true,
     },
     {
       name: "Mariana R.",
-      child: "mãe da Laura",
-      text: "Eu achava que minha filha estava segura. Quando vi o que estavam mandando pra ela no Snapchat, entrei em choque. Ainda bem que descobri a tempo.",
+      child: "Laura's mother",
+      text: "I thought my daughter was safe. When I saw what they were sending her on Snapchat, I was shocked. Good thing I found out in time.",
       avatar: "/testimonials/mariana-testimonial.jpg",
       verified: true,
     },
@@ -132,25 +132,25 @@ export default function SafeKidAIFunil() {
   const socialComments = [
     {
       name: "Rodrigo M.",
-      time: "há 2 horas",
+      time: "2 hours ago",
       comment:
-        "Usei ontem e fiquei em choque. O que vi no TikTok da minha filha me fez chorar. Obrigado por essa ferramenta.",
+        "I used it yesterday and was shocked. What I saw on my daughter's TikTok made me cry. Thank you for this tool.",
       avatar: "/testimonials/rodrigo-comment.jpg",
     },
     {
       name: "Patricia S.",
-      time: "há 4 horas",
-      comment: "Meu filho estava sendo manipulado no Discord e eu não sabia. Essa análise salvou nossa família.",
+      time: "4 hours ago",
+      comment: "My son was being manipulated on Discord and I didn't know. This analysis saved our family.",
       avatar: "/testimonials/patricia-comment.jpg",
     },
   ]
 
   // Variações de CTA para teste A/B
   const ctaVariants = [
-    { text: "🔓 Desbloquear Relatório Completo", icon: Lock },
-    { text: "🔒 Proteger Meu Filho Agora", icon: Shield },
-    { text: "🔍 Ver Relatório Urgente", icon: Eye },
-    { text: "⚡ Desbloquear em Tempo Real", icon: AlertTriangle },
+    { text: "🔓 Unlock Complete Report", icon: Lock },
+    { text: "🔒 Protect My Child Now", icon: Shield },
+    { text: "🔍 View Urgent Report", icon: Eye },
+    { text: "⚡ Unlock in Real Time", icon: AlertTriangle },
   ]
 
   const [profileLoaded, setProfileLoaded] = useState(false)
@@ -265,14 +265,14 @@ export default function SafeKidAIFunil() {
       } else {
         setProfileImage("")
         setIsProfilePrivate(true)
-        setApiError("Não foi possível carregar a foto do perfil")
+        setApiError("Could not load profile photo")
         setProfileLoaded(true)
       }
     } catch (error) {
       console.error("Erro ao buscar foto:", error)
       setProfileImage("")
       setIsProfilePrivate(true)
-      setApiError("Erro ao conectar com o servidor")
+      setApiError("Error connecting to server")
       setProfileLoaded(true)
     } finally {
       setIsLoadingProfile(false)
@@ -383,14 +383,14 @@ export default function SafeKidAIFunil() {
 
   // Estatística local
   const getLocalStatistic = () => {
-    return "⚠️ Só este mês, 57 casos foram registrados em Pindamonhangaba."
+    return "This month alone, 57 cases were registered in our area."
   }
 
   // Loading overlay component
   const LoadingOverlay = () => (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl p-6">
-        <LoadingSpinner message="Carregando verificação..." />
+        <LoadingSpinner message="Loading verification..." />
       </div>
     </div>
   )
@@ -446,7 +446,7 @@ export default function SafeKidAIFunil() {
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">SafeKid AI</h1>
                 <p className="text-[#1FE3C2] text-sm md:text-base font-medium">
-                  Proteção digital em tempo real para pais conscientes
+                  Real-time digital protection for conscious parents
                 </p>
               </motion.div>
 
@@ -458,12 +458,12 @@ export default function SafeKidAIFunil() {
                 className="text-center mb-8"
               >
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                  Você sabe com quem seu filho está falando
-                  <span className="text-[#FF4B4B]"> agora?</span>
+                  Do you know who your child is talking to
+                  <span className="text-[#FF4B4B]"> right now?</span>
                 </h2>
                 <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-                  Mais de <span className="text-[#FFCE00] font-bold">73% dos pais</span> não monitoram as redes sociais
-                  dos filhos
+                  More than <span className="text-[#FFCE00] font-bold">73% of parents</span> don't monitor their
+                  children's social media
                 </p>
               </motion.div>
 
@@ -505,10 +505,10 @@ export default function SafeKidAIFunil() {
                   className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md"
                 >
                   <Shield className="w-6 h-6 mr-2" />
-                  Iniciar Verificação Gratuita
+                  Start Free Verification
                 </Button>
                 <p className="text-gray-400 text-sm mt-4">
-                  🔒 100% Confidencial • ⚡ Análise em tempo real • ✅ Usado por +50.000 famílias
+                  🔒 100% Confidential • Real-time analysis • Used by +50,000 families
                 </p>
               </motion.div>
             </div>
@@ -546,18 +546,18 @@ export default function SafeKidAIFunil() {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] rounded-xl mb-4">
                       <Wifi className="w-8 h-8 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Análise de Segurança Digital</h2>
-                    <p className="text-gray-600">Insira os dados para iniciar a verificação forense</p>
+                    <h2 className="text-2xl font-bold mb-2 text-white">Digital Security Analysis</h2>
+                    <p className="text-white">Insira os dados para iniciar a verificação forense</p>
                   </div>
 
                   <form ref={formRef} className="space-y-6" onKeyDown={handleKeyDown}>
                     {/* Nome do filho */}
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">Nome completo do seu filho(a)</label>
+                      <label className="block font-semibold mb-2 text-white">Your child's full name</label>
                       <Input
                         ref={nameInputRef}
                         type="text"
-                        placeholder="Digite o nome completo"
+                        placeholder="Enter full name"
                         className="input-enhanced h-12 text-base"
                         defaultValue={childName}
                         onChange={(e) => setChildName(e.target.value)}
@@ -567,11 +567,13 @@ export default function SafeKidAIFunil() {
 
                     {/* Número do filho */}
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">Número do filho(a)</label>
+                      <label className="block font-semibold mb-2 text-whiteúmero do filho(a)">
+                        Child's phone number
+                      </label>
                       <CountryPhoneInput
                         value={whatsappNumber}
                         onChange={handlePhoneChange}
-                        placeholder="Digite o número"
+                        placeholder="Enter phone number"
                         className="text-base"
                       />
 
@@ -579,7 +581,7 @@ export default function SafeKidAIFunil() {
                       {whatsappNumber.replace(/\D/g, "").length >= 8 && (
                         <div className="mt-4 p-4 bg-gray-50 rounded-xl border">
                           <p className="text-sm font-semibold text-gray-700 mb-3 text-center">
-                            {isLoadingProfile ? "Buscando foto de perfil..." : "Foto de perfil detectada:"}
+                            {isLoadingProfile ? "Searching profile photo..." : "Profile photo detected:"}
                           </p>
 
                           <div className="flex justify-center">
@@ -593,6 +595,7 @@ export default function SafeKidAIFunil() {
                                   src={
                                     profileImage ||
                                     `https://ui-avatars.com/api/?name=User&background=885EFF&color=fff&size=200` ||
+                                    "/placeholder.svg" ||
                                     "/placeholder.svg" ||
                                     "/placeholder.svg" ||
                                     "/placeholder.svg" ||
@@ -617,11 +620,11 @@ export default function SafeKidAIFunil() {
                             <p className="text-red-500 text-xs text-center mt-2">{apiError}</p>
                           ) : isProfilePrivate && !isLoadingProfile ? (
                             <p className="text-yellow-600 text-xs text-center mt-2">
-                              {profileImage ? "Perfil encontrado" : "Usando avatar padrão"}
+                              {profileImage ? "Profile found" : "Using default avatar"}
                             </p>
                           ) : !isLoadingProfile && profileImage ? (
                             <p className="text-green-600 text-xs text-center mt-2 font-medium">
-                              ✅ Perfil encontrado com sucesso!
+                              ✅ Profile found successfully!
                             </p>
                           ) : null}
                         </div>
@@ -639,20 +642,20 @@ export default function SafeKidAIFunil() {
                         <>
                           <LoadingSpinner size="sm" message="" />
                           <span className="ml-2">
-                            {isTransitioning ? "Iniciando análise..." : "Verificando perfil..."}
+                            {isTransitioning ? "Starting analysis..." : "Verifying profile..."}
                           </span>
                         </>
                       ) : (
                         <>
                           <Eye className="w-5 h-5 mr-2" />
-                          Iniciar Análise Forense
+                          Start Forensic Analysis
                         </>
                       )}
                     </Button>
 
                     {canProceed() && !isLoadingProfile && !isTransitioning && (
                       <p className="text-green-600 text-sm text-center font-medium">
-                        ✅ Pressione Enter ou clique no botão para continuar
+                        ✅ Press Enter or click button to continue
                       </p>
                     )}
                   </form>
@@ -660,12 +663,27 @@ export default function SafeKidAIFunil() {
                   <div className="mt-6 text-center">
                     <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
-                        <Lock className="w-4 h-4" />
-                        <span>Criptografia SSL</span>
+                        <Lock className="w-4 h-4 text-slate-50 text-slate-50" />
+                        <span
+                          className="text-slate-50"
+                          className="text-slate-50"
+                          className="text-white"
+                          className="text-transparent"
+                          className="text-white"
+                        >
+                          SSL Encryption
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Shield className="w-4 h-4" />
-                        <span>Proteção LGPD</span>
+                        <Shield className="w-4 h-4 text-slate-50 text-slate-50 text-slate-100" />
+                        <span
+                          className="text-slate-50"
+                          className="text-slate-50"
+                          className="text-white"
+                          className="text-slate-600"
+                        >
+                          Data Protection
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -724,9 +742,9 @@ export default function SafeKidAIFunil() {
                     />
                   </div>
 
-                  <h2 className="text-3xl font-bold text-white mb-4">ANÁLISE FORENSE EM ANDAMENTO</h2>
+                  <h2 className="text-3xl font-bold text-white mb-4">FORENSIC ANALYSIS IN PROGRESS</h2>
                   <p className="text-[#1FE3C2] mb-8 text-lg">
-                    Escaneando perfil de <strong>{childName}</strong>...
+                    Scanning profile of <strong>{childName}</strong>...
                   </p>
 
                   {/* Progress Bar */}
@@ -734,7 +752,7 @@ export default function SafeKidAIFunil() {
                     <Progress value={scanProgress} className="h-4 bg-gray-800 rounded-full overflow-hidden" />
                   </div>
 
-                  <p className="text-white text-xl font-bold mb-8">{Math.round(scanProgress)}% concluído</p>
+                  <p className="text-white text-xl font-bold mb-8">{Math.round(scanProgress)}% completed</p>
 
                   {/* Prova Social Dinâmica */}
                   <motion.div
@@ -794,7 +812,7 @@ export default function SafeKidAIFunil() {
 
                   <div className="flex items-center justify-center gap-3 text-[#1FE3C2] text-sm">
                     <Shield className="w-5 h-5" />
-                    <span>Conexão segura e criptografada</span>
+                    <span>Secure and encrypted connection</span>
                   </div>
                 </CardContent>
               </Card>
@@ -831,9 +849,9 @@ export default function SafeKidAIFunil() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500 rounded-full mb-4">
                   <MessageCircle className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">🚨 Conversa Suspeita Detectada</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Suspicious Conversation Detected</h2>
                 <p className="text-lg text-red-400 mb-6">
-                  Exemplo do tipo de conversa encontrada no perfil de <strong>{childName}</strong>
+                  Example of the type of conversation found in the profile of <strong>{childName}</strong>
                 </p>
               </motion.div>
 
@@ -851,8 +869,8 @@ export default function SafeKidAIFunil() {
                       <span className="text-white text-sm">?</span>
                     </div>
                     <div>
-                      <h4 className="text-white font-semibold">Usuário Desconhecido</h4>
-                      <p className="text-gray-400 text-xs">Online agora</p>
+                      <h4 className="text-white font-semibold">Unknown User</h4>
+                      <p className="text-gray-400 text-xs">Online now</p>
                     </div>
                   </div>
 
@@ -888,7 +906,7 @@ export default function SafeKidAIFunil() {
                     onClick={() => handleStepTransition("conversion")}
                     className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-3 px-6 rounded-xl"
                   >
-                    Continuar Análise →
+                    Continue Analysis →
                   </Button>
                 </motion.div>
               )}
@@ -900,16 +918,15 @@ export default function SafeKidAIFunil() {
                 transition={{ delay: 0.4 }}
                 className="bg-red-500/10 border-2 border-red-500 rounded-xl p-6 max-w-2xl mx-auto text-center"
               >
-                <h3 className="text-xl font-bold text-red-400 mb-2">⚠️ PADRÃO DE ALICIAMENTO IDENTIFICADO</h3>
+                <h3 className="text-xl font-bold text-red-400 mb-2">⚠️ GROOMING PATTERN IDENTIFIED</h3>
                 <p className="text-white mb-4">
-                  Esta é apenas uma amostra. O relatório completo contém análise detalhada de todas as conversas
-                  suspeitas.
+                  This is just a sample. The complete report contains detailed analysis of all suspicious conversations.
                 </p>
                 <div className="text-sm text-gray-300 space-y-1">
-                  <p>• Tentativa de isolamento ("entre nós")</p>
-                  <p>• Elogios inadequados para a idade</p>
-                  <p>• Solicitação de contato privado</p>
-                  <p>• Construção de confiança falsa</p>
+                  <p>• Isolation attempt ("between us")</p>
+                  <p>• Inappropriate compliments for age</p>
+                  <p>• Private contact request</p>
+                  <p>• False trust building</p>
                 </div>
               </motion.div>
             </div>
@@ -943,11 +960,9 @@ export default function SafeKidAIFunil() {
               {/* Header */}
               <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center mb-8">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-                  Casos Reais que Estamparam Manchetes
+                  Real Cases That Made Headlines
                 </h2>
-                <p className="text-lg md:text-xl text-[#1FE3C2] mb-6">
-                  E mostram por que a SafeKid AI é necessária agora.
-                </p>
+                <p className="text-lg md:text-xl text-[#1FE3C2] mb-6">And show why SafeKid AI is needed now.</p>
               </motion.div>
 
               {/* Carrossel */}
@@ -1021,7 +1036,7 @@ export default function SafeKidAIFunil() {
                 className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 mb-8 max-w-2xl mx-auto"
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">CASO REAL</span>
+                  <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">REAL CASE</span>
                 </div>
                 <h3 className="text-lg font-bold text-white mb-2">{newsCards[currentNewsIndex].title}</h3>
                 <p className="text-[#FFCE00] font-semibold">
@@ -1040,10 +1055,9 @@ export default function SafeKidAIFunil() {
                   onClick={() => handleStepTransition("form")}
                   className="bg-gradient-to-r from-[#FF4B4B] to-[#FF6B6B] hover:from-[#FF3B3B] hover:to-[#FF5B5B] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md"
                 >
-                  <Shield className="w-6 h-6 mr-2" />
-                  Quero Proteger Agora
+                  <Shield className="w-6 h-6 mr-2" />I Want to Protect Now
                 </Button>
-                <p className="text-gray-400 text-sm mt-4">Não deixe seu filho se tornar a próxima manchete</p>
+                <p className="text-gray-400 text-sm mt-4">Don't let your child become the next headline</p>
               </motion.div>
             </div>
           </motion.div>
@@ -1088,10 +1102,10 @@ export default function SafeKidAIFunil() {
                   <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-4 max-w-md mx-auto">
                     <div className="flex items-center justify-center gap-2 mb-2">
                       <Clock className="w-5 h-5 text-red-400" />
-                      <span className="text-red-400 font-bold">ACESSO LIMITADO</span>
+                      <span className="text-red-400 font-bold">LIMITED ACCESS</span>
                     </div>
                     <div className="text-3xl font-bold text-white">{formatTime(timeLeft)}</div>
-                    <p className="text-red-300 text-sm">Tempo restante para acessar o relatório</p>
+                    <p className="text-red-300 text-sm">Time remaining to access the report</p>
                   </div>
                 </motion.div>
 
@@ -1103,15 +1117,14 @@ export default function SafeKidAIFunil() {
                   className="text-center mb-6"
                 >
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                    🚨 ANÁLISE COMPLETA DE <span className="text-red-400">{childName.toUpperCase()}</span>
+                    🚨 COMPLETE ANALYSIS OF <span className="text-red-400">{childName.toUpperCase()}</span>
                   </h1>
                   <p className="text-lg md:text-xl text-[#FFCE00] font-semibold mb-4">
-                    Foram detectadas <span className="text-red-400 font-bold">4 situações de risco</span> que requerem
-                    atenção imediata
+                    4 risk situations detected that require immediate attention
                   </p>
                   <div className="text-center">
                     <span className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                      RELATÓRIO CONFIDENCIAL
+                      CONFIDENTIAL REPORT
                     </span>
                   </div>
                 </motion.div>
@@ -1126,29 +1139,29 @@ export default function SafeKidAIFunil() {
                   {[
                     {
                       platform: "Instagram",
-                      risk: "ALTO",
-                      issue: "Tentativa de aliciamento detectada",
+                      risk: "HIGH",
+                      issue: "Grooming attempt detected",
                       color: "border-red-500 bg-red-500/10",
                       icon: "❌",
                     },
                     {
                       platform: "Snapchat",
-                      risk: "CRÍTICO",
-                      issue: "Interação com perfil desconhecido",
+                      risk: "CRITICAL",
+                      issue: "Interaction with unknown profile",
                       color: "border-red-600 bg-red-600/20",
                       icon: "🚨",
                     },
                     {
                       platform: "TikTok",
-                      risk: "ALTO",
-                      issue: "Conteúdo impróprio visualizado",
+                      risk: "HIGH",
+                      issue: "Inappropriate content viewed",
                       color: "border-red-500 bg-red-500/10",
                       icon: "⚠️",
                     },
                     {
                       platform: "WhatsApp",
-                      risk: "CRÍTICO",
-                      issue: "Conversa suspeita identificada",
+                      risk: "CRITICAL",
+                      issue: "Suspicious conversation identified",
                       color: "border-red-600 bg-red-600/20",
                       icon: "🚨",
                     },
@@ -1166,7 +1179,7 @@ export default function SafeKidAIFunil() {
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                          RISCO {item.risk}
+                          RISK {item.risk}
                         </span>
                       </div>
                       <p className="text-gray-300 text-sm">{item.issue}</p>
@@ -1294,10 +1307,10 @@ export default function SafeKidAIFunil() {
                 <div className="bg-red-500/20 border-2 border-red-500 rounded-xl p-4 max-w-md mx-auto">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Clock className="w-5 h-5 text-red-400" />
-                    <span className="text-red-400 font-bold">OFERTA EXPIRA EM</span>
+                    <span className="text-red-400 font-bold">OFFER EXPIRES IN</span>
                   </div>
                   <div className="text-3xl font-bold text-white">{formatTime(timeLeft)}</div>
-                  <p className="text-red-300 text-sm">Não perca esta oportunidade única</p>
+                  <p className="text-red-300 text-sm">Don't miss this unique opportunity</p>
                 </div>
               </motion.div>
 
@@ -1309,10 +1322,10 @@ export default function SafeKidAIFunil() {
                 className="text-center mb-8"
               >
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                  🔓 DESBLOQUEIE O RELATÓRIO COMPLETO
+                  UNLOCK THE COMPLETE REPORT
                 </h1>
                 <p className="text-lg md:text-xl text-[#FFCE00] font-semibold mb-6">
-                  Acesso completo ao perfil digital de <strong>{childName}</strong>
+                  Complete access to digital profile of <strong>{childName}</strong>
                 </p>
               </motion.div>
 
@@ -1327,26 +1340,26 @@ export default function SafeKidAIFunil() {
                   <CardContent className="p-8 text-center">
                     <div className="mb-6">
                       <div className="text-6xl font-bold text-white mb-2">
-                        <span className="line-through text-3xl text-red-500">R$ 197</span>
+                        <span className="line-through text-3xl text-red-500">R$ 177</span>
                       </div>
-                      <div className="text-6xl font-bold text-[#1FE3C2] mb-2">R$ 47</div>
+                      <div className="text-6xl font-bold text-[#1FE3C2] mb-2">$27</div>
                       <p className="text-white text-lg">
                         <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold mr-2">
                           76% OFF
                         </span>
-                        Apenas hoje!
+                        Today only!
                       </p>
                     </div>
 
                     <div className="space-y-3 mb-8 text-left">
                       {[
-                        "✅ Relatório completo de todas as redes sociais",
-                        "✅ Análise de conversas suspeitas em tempo real",
-                        "✅ Identificação de perfis perigosos",
-                        "✅ Alertas de conteúdo impróprio",
-                        "✅ Monitoramento contínuo por 30 dias",
-                        "✅ Suporte especializado 24/7",
-                        "✅ Garantia de 7 dias ou seu dinheiro de volta",
+                        "Complete report of all social networks",
+                        "Real-time suspicious conversation analysis",
+                        "Dangerous profile identification",
+                        "Inappropriate content alerts",
+                        "Continuous monitoring for 30 days",
+                        "24/7 specialized support",
+                        "7-day guarantee or your money back",
                       ].map((item, index) => (
                         <motion.div
                           key={index}
@@ -1367,12 +1380,10 @@ export default function SafeKidAIFunil() {
                       className="w-full bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 text-xl rounded-xl shadow-2xl btn-enhanced mb-4"
                     >
                       <Lock className="w-6 h-6 mr-2" />
-                      DESBLOQUEAR AGORA - R$ 47
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock w-6 h-6 mr-2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>UNLOCK NOW - $27
                     </Button>
 
-                    <p className="text-gray-400 text-sm">
-                      🔒 Pagamento 100% seguro • 💳 Cartão ou PIX • ⚡ Acesso imediato
-                    </p>
+                    <p className="text-gray-400 text-sm">🔒 100% secure payment • Card or PayPal • Immediate access</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1386,9 +1397,9 @@ export default function SafeKidAIFunil() {
               >
                 <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 max-w-md mx-auto">
                   <Shield className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                  <h3 className="text-xl font-bold text-green-400 mb-2">Garantia de 7 Dias</h3>
+                  <h3 className="text-xl font-bold text-green-400 mb-2">7-Day Guarantee</h3>
                   <p className="text-white text-sm">
-                    Se não ficar 100% satisfeito, devolvemos seu dinheiro sem perguntas.
+                    If you're not 100% satisfied, we'll refund your money with no questions asked.
                   </p>
                 </div>
               </motion.div>
@@ -1401,9 +1412,9 @@ export default function SafeKidAIFunil() {
                 className="text-center"
               >
                 <p className="text-red-400 font-bold text-lg mb-4">
-                  ⚠️ Apenas {Math.floor(Math.random() * 15) + 5} vagas restantes hoje!
+                  ⚠️ Only {Math.floor(Math.random() * 15) + 5} spots remaining today!
                 </p>
-                <p className="text-gray-400 text-sm">Não deixe a segurança do seu filho para depois. Aja agora!</p>
+                <p className="text-gray-400 text-sm">Don't leave your child's safety for later. Act now!</p>
               </motion.div>
             </div>
           </motion.div>
