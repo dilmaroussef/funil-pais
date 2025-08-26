@@ -567,7 +567,7 @@ export default function SafeKidAIFunil() {
 
                     {/* Número do filho */}
                     <div>
-                      <label className="block font-semibold mb-2 text-whiteúmero do filho(a)">
+                      <label className="block font-semibold mb-2 text-whiteúmero do filho(a) text-white">
                         Child's phone number
                       </label>
                       <CountryPhoneInput
