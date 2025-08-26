@@ -547,7 +547,7 @@ export default function SafeKidAIFunil() {
                       <Wifi className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold mb-2 text-white">Digital Security Analysis</h2>
-                    <p className="text-white">Insira os dados para iniciar a verificação forense</p>
+                    <p className="text-white">Enter the data to begin the forensic verification</p>
                   </div>
 
                   <form ref={formRef} className="space-y-6" onKeyDown={handleKeyDown}>
