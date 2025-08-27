@@ -458,13 +458,23 @@ export default function SafeKidAIFunil() {
                 className="text-center mb-8"
               >
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                  Do you know who your child is talking to
-                  <span className="text-[#FF4B4B]"> right now?</span>
+                  Proteção digital inteligente para a segurança dos seus filhos
                 </h2>
                 <p className="text-lg md:text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-                  More than <span className="text-[#FFCE00] font-bold">73% of parents</span> don't monitor their
-                  children's social media
+                  Monitore e proteja em tempo real as interações online das crianças.
                 </p>
+              </motion.div>
+
+              {/* Social Networks Title */}
+              <motion.div
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.35 }}
+                className="text-center mb-4"
+              >
+                <h3 className="text-xl md:text-2xl font-semibold text-[#1FE3C2] mb-2">
+                  Plataformas Monitoradas pela SafeKid AI
+                </h3>
               </motion.div>
 
               {/* Social Networks */}
@@ -502,14 +512,141 @@ export default function SafeKidAIFunil() {
               >
                 <Button
                   onClick={() => handleStepTransition("headlines")}
-                  className="bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md"
+                  className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white font-bold py-4 px-8 text-lg rounded-xl shadow-2xl btn-enhanced w-full max-w-md transition-all duration-300"
                 >
                   <Shield className="w-6 h-6 mr-2" />
-                  Start Free Verification
+                  Iniciar Verificação Segura – Grátis
                 </Button>
-                <p className="text-gray-400 text-sm mt-4">
-                  🔒 100% Confidential • Real-time analysis • Used by +50,000 families
-                </p>
+
+                {/* Credibility Block */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 1.0 }}
+                  className="flex flex-wrap justify-center gap-6 mt-6 mb-8"
+                >
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <span className="text-lg">🔒</span>
+                    <span className="text-sm font-medium">100% Confidencial</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <span className="text-lg">⚡</span>
+                    <span className="text-sm font-medium">Análise em tempo real</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <span className="text-lg">🛡️</span>
+                    <span className="text-sm font-medium">Proteção de Dados (LGPD/GDPR)</span>
+                  </div>
+                </motion.div>
+
+                {/* How It Works Section */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 1.2 }}
+                  className="mb-8"
+                >
+                  <h3 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Como Funciona</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                    {[
+                      { number: "1", title: "Cadastre-se Gratuitamente", desc: "Crie sua conta em segundos" },
+                      { number: "2", title: "Conecte as Redes Sociais", desc: "Vincule as contas do seu filho" },
+                      { number: "3", title: "Receba Alertas em Tempo Real", desc: "Seja notificado sobre riscos" },
+                      { number: "4", title: "Mantenha seu Filho Seguro", desc: "Aja rapidamente quando necessário" },
+                    ].map((step, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ y: 30, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 1.4 + index * 0.1 }}
+                        className="text-center"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-4">
+                          {step.number}
+                        </div>
+                        <h4 className="text-white font-semibold mb-2">{step.title}</h4>
+                        <p className="text-gray-400 text-sm">{step.desc}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* FAQ Section */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 1.6 }}
+                  className="mb-8 max-w-3xl mx-auto"
+                >
+                  <h3 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Dúvidas Frequentes</h3>
+                  <div className="space-y-4">
+                    {[
+                      {
+                        question: "É seguro?",
+                        answer:
+                          "Sim, utilizamos criptografia de ponta e seguimos rigorosamente as normas LGPD e GDPR para proteger todos os dados.",
+                      },
+                      {
+                        question: "Preciso pagar para começar?",
+                        answer:
+                          "Não, você pode começar gratuitamente e ter acesso às funcionalidades básicas de monitoramento.",
+                      },
+                      {
+                        question: "Funciona em todas as redes sociais?",
+                        answer:
+                          "Monitoramos as principais plataformas: Instagram, TikTok, WhatsApp, Telegram e Snapchat.",
+                      },
+                      {
+                        question: "Posso cancelar quando quiser?",
+                        answer: "Sim, você pode cancelar sua conta a qualquer momento sem taxas ou penalidades.",
+                      },
+                    ].map((faq, index) => (
+                      <details key={index} className="bg-white/5 backdrop-blur-sm rounded-xl border border-gray-700">
+                        <summary className="p-4 cursor-pointer text-white font-semibold hover:bg-white/10 transition-colors">
+                          {faq.question}
+                        </summary>
+                        <div className="px-4 pb-4 text-gray-300 text-sm">{faq.answer}</div>
+                      </details>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Footer */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 1.8 }}
+                  className="border-t border-gray-700 pt-8 mt-12"
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-4">
+                      <img src="/safekid-logo-shield.png" alt="SafeKid AI" className="w-8 h-8 object-contain" />
+                      <span className="text-white font-semibold">SafeKid AI</span>
+                    </div>
+
+                    <div className="flex items-center gap-6 text-sm">
+                      <button className="text-gray-400 hover:text-white transition-colors">Termos de Serviço</button>
+                      <button className="text-gray-400 hover:text-white transition-colors">
+                        Política de Privacidade
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <Shield className="w-4 h-4" />
+                        <span>SSL Seguro</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <Lock className="w-4 h-4" />
+                        <span>LGPD</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center mt-6 pt-6 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm">© 2025 SafeKid AI. Todos os direitos reservados.</p>
+                  </div>
+                </motion.div>
               </motion.div>
             </div>
           </motion.div>
@@ -595,6 +732,7 @@ export default function SafeKidAIFunil() {
                                   src={
                                     profileImage ||
                                     `https://ui-avatars.com/api/?name=User&background=885EFF&color=fff&size=200` ||
+                                    "/placeholder.svg" ||
                                     "/placeholder.svg" ||
                                     "/placeholder.svg" ||
                                     "/placeholder.svg" ||
@@ -1380,7 +1518,22 @@ export default function SafeKidAIFunil() {
                       className="w-full bg-gradient-to-r from-[#885EFF] to-[#1FE3C2] hover:from-[#7B52FF] hover:to-[#1BD4B8] text-white font-bold py-4 text-xl rounded-xl shadow-2xl btn-enhanced mb-4"
                     >
                       <Lock className="w-6 h-6 mr-2" />
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock w-6 h-6 mr-2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>UNLOCK NOW - $27
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        class="lucide lucide-lock w-6 h-6 mr-2"
+                      >
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      UNLOCK NOW - $27
                     </Button>
 
                     <p className="text-gray-400 text-sm">🔒 100% secure payment • Card or PayPal • Immediate access</p>
